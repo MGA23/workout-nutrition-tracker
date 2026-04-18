@@ -121,38 +121,61 @@ Rules:
 6) Keep response concise and minimal tokens.
 `
 
-  let geminiResp
-  try {
-    geminiResp = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: prompt }]
-          },
-        ],
-        generationConfig: {
-          temperature: 0.4,
-          topP: 0.9,
-          maxOutputTokens: 1200,
-          responseMimeType: 'text/plain'
-        }
-      })
-    }, 45000)
-  } catch (error) {
-    if (error?.name === 'AbortError') {
-      return jsonResponse({ error: 'Gemini request timeout after 45s.' }, 504)
+  const modelCandidates = [
+    'gemini-2.0-flash',
+    'gemini-1.5-flash-latest',
+    'gemini-1.5-flash-8b',
+    'gemini-1.5-flash'
+  ]
+
+  let geminiResp = null
+  let lastErrorText = ''
+
+  for (const model of modelCandidates) {
+    try {
+      const resp = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: prompt }]
+            },
+          ],
+          generationConfig: {
+            temperature: 0.4,
+            topP: 0.9,
+            maxOutputTokens: 1200,
+            responseMimeType: 'text/plain'
+          }
+        })
+      }, 45000)
+
+      if (resp.ok) {
+        geminiResp = resp
+        break
+      }
+
+      const text = await resp.text()
+      lastErrorText = text
+
+      // If model is not found, try the next candidate model.
+      if (resp.status === 404) continue
+
+      return jsonResponse({ error: `Gemini API request failed on model ${model}.`, details: text }, 502)
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        return jsonResponse({ error: 'Gemini request timeout after 45s.' }, 504)
+      }
+      return jsonResponse({ error: 'Gemini request failed before response.', details: String(error?.message || error) }, 502)
     }
-    return jsonResponse({ error: 'Gemini request failed before response.', details: String(error?.message || error) }, 502)
   }
 
-  if (!geminiResp.ok) {
-    const text = await geminiResp.text()
-    return jsonResponse({ error: 'Gemini API request failed.', details: text }, 502)
+  if (!geminiResp) {
+    return jsonResponse({ error: 'No available Gemini model worked with this key/API version.', details: lastErrorText }, 502)
   }
 
   const geminiData = await geminiResp.json()
