@@ -1794,12 +1794,12 @@
             );
         }
 
-        function ProgressMetricsPage({ entries, form, onFormChange, onPreparePhoto, onConfirmPhoto, onRemovePhoto, onAdd, onDelete, themeMode }) {
+        function ProgressMetricsPage({ entries, form, onFormChange, onPhotoUpload, onRemovePhoto, onAdd, onDelete, themeMode }) {
             const chartRef = useRef(null);
             const chartInstanceRef = useRef(null);
             const [uploadingSlot, setUploadingSlot] = useState('');
-            const [draftPhotos, setDraftPhotos] = useState({ front: null, side: null, back: null });
-            const fileInputRefs = useRef({ front: null, side: null, back: null });
+            const [viewerState, setViewerState] = useState({ open: false, photos: [], index: 0, title: '' });
+            const fileInputRefs = useRef({});
 
             const sortedEntries = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date));
             const latest = sortedEntries.length > 0 ? sortedEntries[sortedEntries.length - 1] : null;
@@ -1891,29 +1891,50 @@
                 if (!file) return;
                 setUploadingSlot(slotKey);
                 try {
-                    const prepared = await onPreparePhoto(file);
-                    if (prepared) {
-                        setDraftPhotos((prev) => ({ ...prev, [slotKey]: prepared }));
-                    }
+                    await onPhotoUpload(slotKey, file);
                 } finally {
                     setUploadingSlot('');
                 }
             };
 
-            const handleConfirmDraftPhoto = (slotKey) => {
-                const draft = draftPhotos[slotKey];
-                if (!draft) return;
-                onConfirmPhoto(slotKey, draft);
-                setDraftPhotos((prev) => ({ ...prev, [slotKey]: null }));
-            };
-
-            const handleRetakePhoto = (slotKey) => {
-                const input = fileInputRefs.current[slotKey];
+            const openPicker = (slotKey, source) => {
+                const refKey = `${slotKey}-${source}`;
+                const input = fileInputRefs.current[refKey];
                 if (input) input.click();
             };
 
-            const handleCancelDraftPhoto = (slotKey) => {
-                setDraftPhotos((prev) => ({ ...prev, [slotKey]: null }));
+            const handleOpenViewer = (entry, startSlotKey) => {
+                const photos = photoSlots
+                    .map((slot) => ({ key: slot.key, title: slot.title, src: entry?.photos?.[slot.key] || null }))
+                    .filter((item) => Boolean(item.src));
+
+                if (photos.length === 0) return;
+
+                const startIndex = Math.max(0, photos.findIndex((photo) => photo.key === startSlotKey));
+                setViewerState({
+                    open: true,
+                    photos,
+                    index: startIndex,
+                    title: entry?.date || 'صور التقدم'
+                });
+            };
+
+            const closeViewer = () => {
+                setViewerState({ open: false, photos: [], index: 0, title: '' });
+            };
+
+            const showNextPhoto = () => {
+                setViewerState((prev) => {
+                    if (!prev.photos.length) return prev;
+                    return { ...prev, index: (prev.index + 1) % prev.photos.length };
+                });
+            };
+
+            const showPreviousPhoto = () => {
+                setViewerState((prev) => {
+                    if (!prev.photos.length) return prev;
+                    return { ...prev, index: (prev.index - 1 + prev.photos.length) % prev.photos.length };
+                });
             };
 
             return (
@@ -1969,7 +1990,7 @@
                             <div className="planner-section-head mb-2">
                                 <div>
                                     <h5 className="planner-title"><i className="fas fa-camera"></i> صور التقدم الأسبوعية</h5>
-                                    <p className="planner-subtitle">الصور تُضغط تلقائيًا بجودة عالية وحجم صغير، ويمكنك إعادة التقاطها قبل الاعتماد.</p>
+                                    <p className="planner-subtitle">الصور تُضغط تلقائيًا بجودة عالية وحجم صغير، ويمكنك إعادة الالتقاط أو الحذف في أي وقت.</p>
                                 </div>
                                 <span className="badge">{hasAllWeeklyPhotos ? 'مكتمل 3/3' : 'مطلوب 3 صور'}</span>
                             </div>
@@ -1981,32 +2002,43 @@
                                         <div key={slot.key} className="planner-row p-2">
                                             <div className="flex items-center justify-between mb-2">
                                                 <p className="planner-grid-head mb-0">{slot.title}</p>
-                                                {photo ? (
-                                                    <button className="secondary-btn px-2 py-1 text-xs" onClick={() => onRemovePhoto(slot.key)}>
-                                                        حذف
-                                                    </button>
-                                                ) : null}
                                             </div>
-                                            <label className="secondary-btn px-3 py-2 text-xs w-full text-center cursor-pointer mb-2 block">
-                                                <i className="fas fa-image ml-1"></i>
-                                                {isUploading ? 'جاري الضغط...' : (photo ? 'تغيير الصورة' : 'التقاط/اختيار صورة')}
+                                            <div className="grid grid-cols-2 gap-2 mb-2">
+                                                <button className="secondary-btn px-2 py-2 text-xs" onClick={() => openPicker(slot.key, 'camera')}>
+                                                    <i className="fas fa-camera ml-1"></i>
+                                                    كاميرا
+                                                </button>
+                                                <button className="secondary-btn px-2 py-2 text-xs" onClick={() => openPicker(slot.key, 'gallery')}>
+                                                    <i className="fas fa-images ml-1"></i>
+                                                    الاستديو
+                                                </button>
                                                 <input
                                                     type="file"
                                                     accept="image/*"
                                                     capture="environment"
                                                     className="hidden"
-                                                    ref={(el) => { fileInputRefs.current[slot.key] = el; }}
+                                                    ref={(el) => { fileInputRefs.current[`${slot.key}-camera`] = el; }}
                                                     onChange={(e) => {
                                                         const file = e.target.files && e.target.files[0];
                                                         handlePhotoInput(slot.key, file);
                                                         e.target.value = '';
                                                     }}
                                                 />
-                                            </label>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    ref={(el) => { fileInputRefs.current[`${slot.key}-gallery`] = el; }}
+                                                    onChange={(e) => {
+                                                        const file = e.target.files && e.target.files[0];
+                                                        handlePhotoInput(slot.key, file);
+                                                        e.target.value = '';
+                                                    }}
+                                                />
+                                            </div>
+                                            {isUploading ? <p className="muted-text text-xs mb-2">جاري ضغط الصورة...</p> : null}
                                             <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--chip-border)', background: 'var(--chip-bg)', minHeight: '130px' }}>
-                                                {draftPhotos[slot.key] ? (
-                                                    <img src={draftPhotos[slot.key]} alt={`معاينة ${slot.title}`} className="w-full h-36 object-cover" loading="lazy" />
-                                                ) : photo ? (
+                                                {photo ? (
                                                     <img src={photo} alt={`صورة ${slot.title}`} className="w-full h-36 object-cover" loading="lazy" />
                                                 ) : (
                                                     <div className="h-36 flex items-center justify-center muted-text text-xs">
@@ -2014,16 +2046,13 @@
                                                     </div>
                                                 )}
                                             </div>
-                                            {draftPhotos[slot.key] ? (
-                                                <div className="grid grid-cols-3 gap-2 mt-2">
-                                                    <button className="primary-btn px-2 py-2 text-xs" onClick={() => handleConfirmDraftPhoto(slot.key)}>
-                                                        اعتماد
+                                            {photo ? (
+                                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                                    <button className="secondary-btn px-2 py-2 text-xs" onClick={() => openPicker(slot.key, 'camera')}>
+                                                        إعادة الالتقاط
                                                     </button>
-                                                    <button className="secondary-btn px-2 py-2 text-xs" onClick={() => handleRetakePhoto(slot.key)}>
-                                                        إعادة التقاط
-                                                    </button>
-                                                    <button className="secondary-btn px-2 py-2 text-xs" onClick={() => handleCancelDraftPhoto(slot.key)}>
-                                                        إلغاء
+                                                    <button className="secondary-btn px-2 py-2 text-xs" onClick={() => onRemovePhoto(slot.key)}>
+                                                        حذف
                                                     </button>
                                                 </div>
                                             ) : null}
@@ -2077,7 +2106,9 @@
                                             {photoSlots.map((slot) => (
                                                 <div key={`${entry.id}-${slot.key}`} className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--chip-border)', background: 'var(--chip-bg)' }}>
                                                     {photos[slot.key] ? (
-                                                        <img src={photos[slot.key]} alt={`${slot.title} - ${entry.date}`} className="w-full h-28 object-cover" loading="lazy" />
+                                                        <button className="block w-full" onClick={() => handleOpenViewer(entry, slot.key)}>
+                                                            <img src={photos[slot.key]} alt={`${slot.title} - ${entry.date}`} className="w-full h-28 object-cover" loading="lazy" />
+                                                        </button>
                                                     ) : (
                                                         <div className="h-28 flex items-center justify-center muted-text text-xs">{slot.title}: لا توجد</div>
                                                     )}
@@ -2089,6 +2120,40 @@
                             })}
                         </div>
                     </div>
+
+                    {viewerState.open && viewerState.photos.length > 0 ? (
+                        <div
+                            className="fixed inset-0"
+                            style={{ background: 'rgba(0,0,0,0.82)', zIndex: 70 }}
+                            onClick={closeViewer}
+                        >
+                            <div className="h-full w-full flex items-center justify-center p-3" onClick={(e) => e.stopPropagation()}>
+                                <div className="card p-3 w-full" style={{ maxWidth: '560px' }}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div>
+                                            <p className="planner-grid-head mb-0">{viewerState.title}</p>
+                                            <p className="planner-subtitle mb-0">{viewerState.photos[viewerState.index]?.title}</p>
+                                        </div>
+                                        <button className="secondary-btn px-3 py-1 text-xs" onClick={closeViewer}>إغلاق</button>
+                                    </div>
+
+                                    <div className="rounded-lg overflow-hidden mb-2" style={{ background: '#111' }}>
+                                        <img
+                                            src={viewerState.photos[viewerState.index]?.src}
+                                            alt={viewerState.photos[viewerState.index]?.title || 'صورة تقدم'}
+                                            className="w-full"
+                                            style={{ maxHeight: '72vh', objectFit: 'contain' }}
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button className="secondary-btn py-2 text-sm" onClick={showPreviousPhoto}>السابق</button>
+                                        <button className="secondary-btn py-2 text-sm" onClick={showNextPhoto}>التالي</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : null}
                 </div>
             );
         }
@@ -2183,25 +2248,20 @@
                 });
             };
 
-            const handlePrepareMetricsPhoto = async (file) => {
-                if (!file) return null;
+            const handleMetricsPhotoUpload = async (slot, file) => {
+                if (!file) return;
                 try {
                     const compressedDataUrl = await compressImageFile(file);
-                    return compressedDataUrl;
+                    setMetricsForm(prev => ({
+                        ...prev,
+                        photos: {
+                            ...(prev.photos || {}),
+                            [slot]: compressedDataUrl
+                        }
+                    }));
                 } catch (_) {
                     alert('تعذر تجهيز الصورة. حاول مرة أخرى بصورة أوضح.');
-                    return null;
                 }
-            };
-
-            const handleConfirmMetricsPhoto = (slot, dataUrl) => {
-                setMetricsForm(prev => ({
-                    ...prev,
-                    photos: {
-                        ...(prev.photos || {}),
-                        [slot]: dataUrl
-                    }
-                }));
             };
 
             const handleRemoveMetricsPhoto = (slot) => {
@@ -3602,8 +3662,7 @@
                         entries={metricsEntries}
                         form={metricsForm}
                         onFormChange={updateMetricsForm}
-                        onPreparePhoto={handlePrepareMetricsPhoto}
-                        onConfirmPhoto={handleConfirmMetricsPhoto}
+                        onPhotoUpload={handleMetricsPhotoUpload}
                         onRemovePhoto={handleRemoveMetricsPhoto}
                         onAdd={handleAddMetricsEntry}
                         onDelete={handleDeleteMetricsEntry}
