@@ -2390,11 +2390,21 @@
                     setAiSummary(finalResult.summary);
                     setAiDialogOpen(false);
                 } catch (error) {
+                    const rawMessage = String(error?.message || '');
+                    let details = '';
+                    try {
+                        const parsed = JSON.parse(rawMessage);
+                        details = parsed?.details || parsed?.error || '';
+                    } catch (_) {
+                        details = rawMessage;
+                    }
+
                     const reason = error?.name === 'AbortError'
                         ? 'انتهت مهلة الطلب. حاول مرة أخرى أو قلل التفاصيل.'
                         : 'تعذر توليد الخطة من Gemini/DeepSeek. تأكد من إعداد endpoint ومفتاح API ثم حاول مرة أخرى.';
-                    setAiSummary(reason);
-                    alert(reason);
+                    const shortDetails = details ? `\n\nتفاصيل الخطأ: ${details.slice(0, 220)}` : '';
+                    setAiSummary(`${reason}${shortDetails}`);
+                    alert(`${reason}${shortDetails}`);
                 } finally {
                     setAiIsGenerating(false);
                 }

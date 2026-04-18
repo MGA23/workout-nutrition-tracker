@@ -120,30 +120,38 @@ Rules:
 5) Include all days 0..6.
 `
 
-  const deepseekResp = await fetchWithTimeout('https://api.deepseek.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${env.DEEPSEEK_API_KEY}`
-    },
-    body: JSON.stringify({
-      model: 'deepseek-chat',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a fitness programming assistant. Return valid JSON only.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.5,
-      top_p: 0.9,
-      max_tokens: 1800,
-      response_format: { type: 'json_object' }
-    })
-  }, 20000)
+  let deepseekResp
+  try {
+    deepseekResp = await fetchWithTimeout('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${env.DEEPSEEK_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a fitness programming assistant. Return valid JSON only.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.5,
+        top_p: 0.9,
+        max_tokens: 1800,
+        response_format: { type: 'json_object' }
+      })
+    }, 20000)
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      return jsonResponse({ error: 'DeepSeek request timeout after 20s.' }, 504)
+    }
+    return jsonResponse({ error: 'DeepSeek request failed before response.', details: String(error?.message || error) }, 502)
+  }
 
   if (!deepseekResp.ok) {
     const text = await deepseekResp.text()
