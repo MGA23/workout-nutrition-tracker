@@ -1,0 +1,3537 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>متتبع التمرين والتغذية</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&family=Epilogue:wght@500;700;800;900&family=Manrope:wght@400;600;700;800&display=swap');
+
+        :root {
+            --bg-primary: #101010;
+            --bg-mid: #171717;
+            --bg-end: #121212;
+            --bg-glow-primary: rgba(242, 202, 80, 0.12);
+            --bg-glow-secondary: rgba(229, 226, 225, 0.08);
+            --border-card: #3b3730;
+            --text-primary: #e9e3d7;
+            --text-muted: #aba28e;
+            --primary: #f2ca50;
+            --primary-dark: #d4af37;
+            --secondary: #d4af37;
+            --card-bg-start: rgba(34, 33, 31, 0.94);
+            --card-bg-end: rgba(26, 25, 24, 0.96);
+            --primary-shadow: rgba(242, 202, 80, 0.26);
+            --secondary-soft: rgba(242, 202, 80, 0.08);
+            --secondary-soft-hover: rgba(242, 202, 80, 0.16);
+            --secondary-border-soft: rgba(242, 202, 80, 0.28);
+            --track-bg: #35322e;
+            --badge-bg: rgba(242, 202, 80, 0.12);
+            --badge-border: rgba(242, 202, 80, 0.26);
+            --badge-text: #f5d984;
+            --input-bg: #1a1a1a;
+            --input-border: #4b453b;
+            --day-tab-bg: rgba(39, 37, 34, 0.9);
+            --day-tab-border: rgba(242, 202, 80, 0.2);
+            --day-tab-active-gradient: linear-gradient(130deg, #f2ca50, #d4af37);
+            --chip-bg: rgba(40, 38, 35, 0.92);
+            --chip-border: #474238;
+            --nav-bg: rgba(22, 21, 20, 0.95);
+            --nav-border: #3c3830;
+            --nav-shadow: 0 10px 30px rgba(0, 0, 0, 0.42);
+            --nav-active-bg: rgba(242, 202, 80, 0.14);
+            --nav-active-text: #ffe8a7;
+            --chart-text: #e7dcc0;
+            --chart-tick: #bcae8b;
+            --chart-grid: #3f3a2f;
+            --shadow-soft: 0 24px 50px rgba(0, 0, 0, 0.35);
+        }
+
+        body.theme-gym {
+            --bg-primary: #0f141b;
+            --bg-mid: #101a24;
+            --bg-end: #0b1117;
+            --bg-glow-primary: rgba(96, 159, 255, 0.14);
+            --bg-glow-secondary: rgba(0, 197, 164, 0.1);
+            --border-card: #28323d;
+            --text-primary: #e9edf2;
+            --text-muted: #97a6b5;
+            --primary: #8cb5ff;
+            --primary-dark: #5f8df2;
+            --secondary: #00c5a4;
+            --card-bg-start: rgba(22, 31, 43, 0.94);
+            --card-bg-end: rgba(15, 22, 32, 0.96);
+            --primary-shadow: rgba(96, 159, 255, 0.32);
+            --secondary-soft: rgba(0, 197, 164, 0.14);
+            --secondary-soft-hover: rgba(0, 197, 164, 0.22);
+            --secondary-border-soft: rgba(0, 197, 164, 0.42);
+            --track-bg: #233241;
+            --badge-bg: rgba(242, 99, 37, 0.18);
+            --badge-border: rgba(242, 99, 37, 0.35);
+            --badge-text: #ffb799;
+            --input-bg: #17212d;
+            --input-border: #324152;
+            --day-tab-bg: rgba(20, 30, 42, 0.84);
+            --day-tab-border: rgba(96, 159, 255, 0.3);
+            --day-tab-active-gradient: linear-gradient(130deg, #8cb5ff, #5f8df2);
+            --chip-bg: rgba(20, 30, 42, 0.84);
+            --chip-border: #334455;
+            --nav-bg: rgba(15, 24, 34, 0.92);
+            --nav-border: #2a3949;
+            --nav-shadow: 0 10px 30px rgba(0, 0, 0, 0.42);
+            --nav-active-bg: rgba(96, 159, 255, 0.2);
+            --nav-active-text: #d7e5ff;
+            --chart-text: #dbe4ee;
+            --chart-tick: #9fb0c1;
+            --chart-grid: #2c3b4a;
+            --shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.34);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--text-primary);
+            font-family: 'Rubik', 'Manrope', sans-serif;
+            overflow-x: hidden;
+            background:
+                radial-gradient(circle at 10% 10%, var(--bg-glow-primary), transparent 28%),
+                radial-gradient(circle at 85% 0%, var(--bg-glow-secondary), transparent 32%),
+                linear-gradient(160deg, var(--bg-primary) 0%, var(--bg-mid) 50%, var(--bg-end) 100%);
+        }
+
+        h1, h2, h3 {
+            font-family: 'Rubik', 'Manrope', sans-serif;
+            letter-spacing: 0.01em;
+        }
+
+        .card {
+            background: linear-gradient(165deg, var(--card-bg-start), var(--card-bg-end));
+            border: 1px solid var(--border-card);
+            border-radius: 1.4rem;
+            box-shadow: var(--shadow-soft);
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            position: relative;
+            transition: background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+        }
+
+        .topbar-card {
+            background: linear-gradient(180deg, rgba(22, 22, 22, 0.9), rgba(16, 16, 16, 0.86));
+            backdrop-filter: blur(12px);
+            border-radius: 1.25rem;
+            border-color: rgba(242, 202, 80, 0.12);
+        }
+
+        .app-topbar {
+            position: sticky;
+            top: 0.5rem;
+            z-index: 30;
+        }
+
+        .hero-center {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero-center .day-title {
+            font-family: 'Epilogue', sans-serif;
+            font-size: clamp(1.6rem, 3.8vw, 2.1rem);
+            font-weight: 800;
+            line-height: 1.15;
+            margin: 0;
+        }
+
+        .hero-center .day-subtitle {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--text-muted);
+        }
+
+        .hide-mobile {
+            display: inline-flex;
+        }
+
+        .day-hero-card {
+            border-radius: 1.6rem;
+            border-color: rgba(242, 202, 80, 0.22);
+        }
+
+        .completed-surface {
+            background:
+                linear-gradient(0deg, rgba(242, 202, 80, 0.16), rgba(242, 202, 80, 0.16)),
+                linear-gradient(165deg, var(--card-bg-start), var(--card-bg-end));
+            box-shadow: var(--shadow-soft);
+            transform: translateY(-1px);
+        }
+
+        .exercise-card,
+        .meal-card {
+            border: none;
+            background: transparent;
+            box-shadow: none;
+            padding: 0 !important;
+        }
+
+        body.theme-gym .completed-surface {
+            background:
+                linear-gradient(0deg, rgba(96, 159, 255, 0.18), rgba(96, 159, 255, 0.18)),
+                linear-gradient(165deg, var(--card-bg-start), var(--card-bg-end));
+            box-shadow: var(--shadow-soft);
+        }
+
+        .text-primary {
+            color: var(--primary);
+        }
+
+        .text-secondary {
+            color: var(--secondary);
+        }
+
+        .border-primary {
+            border-color: var(--primary);
+        }
+
+        .border-secondary {
+            border-color: var(--secondary);
+        }
+
+        .bg-secondary {
+            background-color: var(--secondary);
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #241a00;
+            font-weight: 700;
+            border-radius: 0.95rem;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            box-shadow: 0 8px 20px var(--primary-shadow);
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px var(--primary-shadow);
+        }
+
+        body.theme-gym .primary-btn {
+            color: #eaf2ff;
+        }
+
+        .primary-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .secondary-btn {
+            background-color: var(--secondary-soft);
+            border: 1px solid var(--secondary-border-soft);
+            color: var(--primary);
+            font-weight: 700;
+            border-radius: 0.95rem;
+            transition: background-color 0.25s ease, transform 0.25s ease;
+        }
+
+        .secondary-btn:hover {
+            background-color: var(--secondary-soft-hover);
+            transform: translateY(-1px);
+        }
+
+        .icon-action-btn {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .exercise-top {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.8rem;
+            border-radius: 0.6rem;
+            background: linear-gradient(130deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.08));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .exercise-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+        .exercise-toggle {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            border: 1px solid rgba(242, 202, 80, 0.58);
+            color: var(--primary);
+            background: rgba(242, 202, 80, 0.12);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .exercise-toggle.completed,
+        .exercise-play {
+            background: var(--primary);
+            color: #1f1807;
+            border-color: transparent;
+        }
+
+        .exercise-play {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.98rem;
+        }
+
+        .exercise-machine {
+            width: 56px;
+            height: 56px;
+            border-radius: 0.9rem;
+            background: #0a0a0a;
+            color: var(--text-primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .exercise-main {
+            text-align: right;
+            min-width: 0;
+        }
+
+        .exercise-main .name {
+            font-size: 1.02rem;
+            font-weight: 800;
+            line-height: 1.35;
+            margin: 0;
+        }
+
+        .exercise-main .meta {
+            margin-top: 0.2rem;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            letter-spacing: 0.01em;
+        }
+
+        .meal-shell {
+            padding: 0.8rem;
+            border-radius: 0.6rem;
+            background: linear-gradient(130deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.08));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .meal-header {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.7rem;
+        }
+
+        .meal-check {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            border: 1px solid rgba(242, 202, 80, 0.58);
+            color: var(--primary);
+            background: rgba(242, 202, 80, 0.1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+        }
+
+        .meal-check.done {
+            background: var(--primary);
+            color: #1f1807;
+            border-color: transparent;
+        }
+
+        .meal-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: rgba(242, 202, 80, 0.75);
+        }
+
+        .macro-box {
+            background: #090909;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 0.45rem;
+            padding: 0.55rem;
+        }
+
+        .macro-box .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.3rem;
+            font-size: 0.72rem;
+        }
+
+        .macro-box .row .label-protein {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .macro-box .row .label-carb {
+            color: #c7c6c4;
+            font-weight: 700;
+        }
+
+        .macro-box .row .pill {
+            background: rgba(255, 255, 255, 0.12);
+            padding: 0.12rem 0.34rem;
+            border-radius: 0.35rem;
+            font-size: 0.66rem;
+            font-weight: 700;
+        }
+
+        .macro-box .food {
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .progress-bar {
+            background-color: var(--track-bg);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.5s ease;
+        }
+
+        .badge {
+            background-color: var(--badge-bg);
+            border: 1px solid var(--badge-border);
+            color: var(--badge-text);
+            border-radius: 999px;
+            padding: 0.2rem 0.65rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+        }
+
+        .energy-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            border-radius: 999px;
+            background: var(--track-bg);
+            outline: none;
+        }
+
+        .energy-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--secondary);
+            cursor: pointer;
+            border: 3px solid var(--bg-primary);
+            box-shadow: 0 0 0 2px rgba(47, 143, 116, 0.28);
+        }
+
+        .energy-slider::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--secondary);
+            cursor: pointer;
+            border: 3px solid var(--bg-primary);
+            box-shadow: 0 0 0 2px rgba(47, 143, 116, 0.28);
+        }
+
+        .weight-history {
+            display: flex;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--track-bg);
+            gap: 0.35rem;
+            padding: 0.35rem 0;
+            direction: rtl;
+            justify-content: flex-start;
+        }
+
+        .weight-history::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .weight-history::-webkit-scrollbar-track {
+            background: var(--track-bg);
+            border-radius: 3px;
+        }
+
+        .weight-history::-webkit-scrollbar-thumb {
+            background-color: var(--primary);
+            border-radius: 3px;
+        }
+
+        .custom-checkbox {
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--primary);
+            border-radius: 0.5rem;
+            background-color: transparent;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .custom-checkbox:checked {
+            background-color: var(--primary);
+        }
+
+        .custom-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 800;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .day-tab {
+            border-radius: 1rem;
+            border: 1px solid var(--day-tab-border);
+            background: var(--day-tab-bg);
+            min-width: 108px;
+            transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .day-tab.active {
+            background: var(--day-tab-active-gradient);
+            color: #231900;
+            border-color: transparent;
+            box-shadow: 0 12px 22px var(--primary-shadow);
+        }
+
+        .day-tab.completed::after {
+            content: '✓';
+            margin-right: 0.35rem;
+            color: var(--secondary);
+            font-weight: 800;
+        }
+
+        .page-shell {
+            width: min(1120px, 100% - 1rem);
+            margin: 0 auto;
+            padding: 1rem 0 1.6rem;
+        }
+
+        .section-title {
+            font-size: 1.08rem;
+            font-weight: 800;
+            margin-bottom: 0.85rem;
+        }
+
+        .input-surface {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-primary);
+            border-radius: 0.35rem;
+        }
+
+        .muted-text {
+            color: var(--text-muted);
+        }
+
+        .planner-root {
+            display: grid;
+            gap: 1.1rem;
+        }
+
+        .planner-shell {
+            border: 1px solid rgba(242, 202, 80, 0.16);
+            background:
+                radial-gradient(circle at 100% 0%, rgba(242, 202, 80, 0.08), transparent 34%),
+                linear-gradient(165deg, rgba(25, 23, 20, 0.96), rgba(15, 15, 15, 0.98));
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.38);
+        }
+
+        .planner-hero {
+            padding: 0.9rem;
+            border-radius: 0.9rem;
+            border: 1px solid rgba(242, 202, 80, 0.18);
+            background: linear-gradient(135deg, rgba(242, 202, 80, 0.1), rgba(242, 202, 80, 0.02));
+        }
+
+        .planner-panel {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.95rem;
+            border: 1px solid rgba(242, 202, 80, 0.12);
+            background: linear-gradient(150deg, rgba(255, 255, 255, 0.025), rgba(0, 0, 0, 0.2));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+        }
+
+        .planner-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(242, 202, 80, 0.24), transparent);
+            pointer-events: none;
+        }
+
+        .planner-section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .planner-title {
+            font-size: 1.02rem;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .planner-subtitle {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            margin-top: 0.16rem;
+        }
+
+        .planner-row {
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(6, 6, 6, 0.34);
+            border-radius: 0.7rem;
+            padding: 0.55rem;
+        }
+
+        .planner-grid-head {
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .ai-dialog-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(5px);
+            z-index: 90;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.8rem;
+        }
+
+        .ai-dialog {
+            width: min(760px, 100%);
+            max-height: 88vh;
+            overflow: auto;
+            border-radius: 0.95rem;
+            border: 1px solid rgba(242, 202, 80, 0.18);
+            background: linear-gradient(160deg, rgba(24, 24, 24, 0.98), rgba(12, 12, 12, 0.98));
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+            padding: 1rem;
+        }
+
+        .planner-root .input-surface {
+            min-height: 40px;
+            border-radius: 0.6rem;
+            background: rgba(16, 25, 40, 0.62);
+            border-color: rgba(122, 147, 182, 0.35);
+            color: #e8edf5;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .planner-root .input-surface:focus {
+            outline: none;
+            border-color: rgba(242, 202, 80, 0.68);
+            box-shadow: 0 0 0 2px rgba(242, 202, 80, 0.16);
+        }
+
+        .planner-root .secondary-btn {
+            border-radius: 0.65rem;
+        }
+
+        .app-frame {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .app-frame > * {
+            min-width: 0;
+        }
+
+        .day-tabs-row {
+            scrollbar-width: none;
+        }
+
+        .day-tabs-row::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hero-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.65rem;
+        }
+
+        .metric-chip {
+            background: var(--chip-bg);
+            border: 1px solid var(--chip-border);
+            border-radius: 0.85rem;
+            padding: 0.55rem 0.65rem;
+            text-align: center;
+        }
+
+        .metric-chip strong {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 800;
+        }
+
+        .metric-chip span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .brand-logo {
+            width: 220px;
+            max-width: 100%;
+            height: 54px;
+            border-radius: 14px;
+            border: 1px solid var(--border-card);
+            background: linear-gradient(120deg, rgba(242, 202, 80, 0.18), rgba(65, 61, 49, 0.55));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            box-shadow: var(--shadow-soft);
+        }
+
+        body.theme-gym .brand-logo {
+            background: linear-gradient(120deg, rgba(96, 159, 255, 0.22), rgba(0, 197, 164, 0.16));
+        }
+
+        .brand-logo-badge {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .brand-logo-text {
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: var(--text-primary);
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .page-shell {
+                width: min(1120px, calc(100% - 0.7rem));
+                padding-top: 0.7rem;
+                padding-bottom: 1.2rem;
+            }
+
+            .card {
+                border-radius: 1rem;
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            }
+
+            .primary-btn,
+            .secondary-btn {
+                min-height: 44px;
+            }
+
+            .icon-action-btn {
+                width: 42px;
+                height: 42px;
+                min-height: 42px;
+            }
+
+            .section-title {
+                font-size: 1rem;
+                margin-bottom: 0.65rem;
+            }
+
+            .day-tab {
+                min-width: 94px;
+                padding: 0.55rem 0.62rem;
+            }
+
+            .day-tab .text-center {
+                min-height: 2.5rem;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+
+            .metric-chip {
+                padding: 0.48rem 0.56rem;
+            }
+
+            .metric-chip strong {
+                font-size: 0.84rem;
+            }
+
+            .brand-logo {
+                width: 42px;
+                height: 42px;
+                border-radius: 999px;
+                gap: 0;
+            }
+
+            .brand-logo-text {
+                display: none;
+            }
+
+            .hide-mobile {
+                display: none;
+            }
+
+            .weight-history {
+                padding: 0.25rem 0;
+            }
+
+            .card canvas {
+                height: 210px !important;
+            }
+
+            .exercise-top {
+                grid-template-columns: auto 1fr auto;
+                gap: 0.55rem;
+                padding: 0.65rem;
+            }
+
+            .exercise-machine {
+                width: 48px;
+                height: 48px;
+                border-radius: 0.75rem;
+                font-size: 1.05rem;
+            }
+
+            .exercise-main .name {
+                font-size: 0.95rem;
+            }
+
+            .exercise-main .meta {
+                font-size: 0.82rem;
+            }
+
+            .exercise-toggle,
+            .exercise-play {
+                width: 31px;
+                height: 31px;
+            }
+
+            .planner-section-head {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .planner-section-head > .secondary-btn,
+            .planner-section-head > .primary-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .planner-title {
+                font-size: 0.95rem;
+            }
+
+            .planner-row {
+                padding: 0.45rem;
+            }
+
+            .meal-shell {
+                padding: 0.65rem;
+            }
+
+            .meal-check {
+                width: 28px;
+                height: 28px;
+            }
+
+            .macro-box .food {
+                font-size: 0.88rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-shell {
+                width: calc(100% - 0.55rem);
+            }
+
+            .card {
+                padding-left: 0.85rem !important;
+                padding-right: 0.85rem !important;
+            }
+
+            .hero-center .day-title {
+                font-size: 1.45rem;
+            }
+
+            .hero-center .day-subtitle {
+                font-size: 0.9rem;
+            }
+
+            .day-tabs-row {
+                display: grid !important;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 0.45rem;
+                overflow: visible;
+                padding-bottom: 0;
+            }
+
+            .card .font-bold {
+                font-size: 0.95rem;
+            }
+
+            .weight-history {
+                gap: 0.28rem;
+            }
+
+            .day-tab {
+                min-width: 0;
+                width: 100%;
+                padding: 0.5rem 0.45rem;
+            }
+
+            .day-tab .text-xs {
+                font-size: 0.7rem;
+                line-height: 1.1;
+            }
+
+            .day-tab .text-sm {
+                font-size: 0.85rem;
+            }
+
+            .badge {
+                font-size: 0.74rem;
+                padding: 0.14rem 0.5rem;
+            }
+
+            .hero-metrics {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo, useCallback } = React;
+        
+        // البيانات الشخصية المبرمجة مسبقاً
+        const WEEK_DAYS = [
+            { id: 0, name: "الأحد", type: "Push", time: "1.5 ساعة", exercises: [0, 1, 2, 3, 4] },
+            { id: 1, name: "الإثنين", type: "Pull", time: "1.5 ساعة", exercises: [5, 6, 7, 8, 9] },
+            { id: 2, name: "الثلاثاء", type: "Rest", time: "راحة", exercises: [] },
+            { id: 3, name: "الأربعاء", type: "Legs", time: "2 ساعة", exercises: [10, 11, 12, 13, 14] },
+            { id: 4, name: "الخميس", type: "Upper Light", time: "1 ساعة", exercises: [0, 1, 5, 6] },
+            { id: 5, name: "الجمعة", type: "Light Activity", time: "45 دقيقة", exercises: [15, 16] },
+            { id: 6, name: "السبت", type: "Rest", time: "راحة", exercises: [] }
+        ];
+        
+        const EXERCISES = [
+            { id: 0, name: "Bench Press", sets: 4, reps: "6-8", videoUrl: "https://www.youtube.com/watch?v=rT7DgCr-3pg" },
+            { id: 1, name: "Incline Dumbbell Press", sets: 4, reps: "8-10", videoUrl: "https://www.youtube.com/watch?v=8iPEnn-ltC8" },
+            { id: 2, name: "Cable Fly", sets: 3, reps: "12-15", videoUrl: "https://www.youtube.com/watch?v=Iwe6AmxVf7o" },
+            { id: 3, name: "Triceps Pushdown", sets: 3, reps: "10-12", videoUrl: "https://www.youtube.com/watch?v=_gsUck-7M74" },
+            { id: 4, name: "Overhead Triceps Extension", sets: 3, reps: "10-12", videoUrl: "https://www.youtube.com/watch?v=riAutegDqdI" },
+            { id: 5, name: "Pull-ups", sets: 4, reps: "6-10", videoUrl: "https://www.youtube.com/watch?v=eGo4IYlbE5g" },
+            { id: 6, name: "Bent Over Row", sets: 4, reps: "8-10", videoUrl: "https://www.youtube.com/watch?v=FWJR5Ve8bnQ" },
+            { id: 7, name: "Lat Pulldown", sets: 3, reps: "10-12", videoUrl: "https://www.youtube.com/watch?v=CAwf7n6Luuc" },
+            { id: 8, name: "Face Pull", sets: 3, reps: "12-15", videoUrl: "https://www.youtube.com/watch?v=fozMl4pQp_c" },
+            { id: 9, name: "Bicep Curl", sets: 3, reps: "10-12", videoUrl: "https://www.youtube.com/watch?v=ykJmrZ5v0Oo" },
+            { id: 10, name: "Squat", sets: 4, reps: "5-8", videoUrl: "https://www.youtube.com/watch?v=U3HlEF_E9fo" },
+            { id: 11, name: "Leg Press", sets: 4, reps: "10-12", videoUrl: "https://www.youtube.com/watch?v=IZxyjW7MPJQ" },
+            { id: 12, name: "Romanian Deadlift", sets: 4, reps: "8-10", videoUrl: "https://www.youtube.com/watch?v=2SHsk9AzdjA" },
+            { id: 13, name: "Leg Extension", sets: 3, reps: "12-15", videoUrl: "https://www.youtube.com/watch?v=YyvSfVjQeL0" },
+            { id: 14, name: "Calf Raise", sets: 4, reps: "12-20", videoUrl: "https://www.youtube.com/watch?v=JbyjNymZOt0" },
+            { id: 15, name: "Plank", sets: 3, reps: "45-60ث", videoUrl: "https://www.youtube.com/watch?v=pSHjTRCQxIw" },
+            { id: 16, name: "Jump Rope", sets: 5, reps: "60ث", videoUrl: "https://www.youtube.com/watch?v=1BZM2Vre5oc" }
+        ];
+
+        const BASIC_GYM_EXERCISES = [
+            { category: "Push", name: "Bench Press", sets: 4, reps: "6-10" },
+            { category: "Push", name: "Incline Dumbbell Press", sets: 3, reps: "8-12" },
+            { category: "Push", name: "Dumbbell Shoulder Press", sets: 3, reps: "8-12" },
+            { category: "Push", name: "Cable Fly", sets: 3, reps: "12-15" },
+            { category: "Push", name: "Triceps Pushdown", sets: 3, reps: "10-15" },
+
+            { category: "Pull", name: "Pull-ups", sets: 4, reps: "6-10" },
+            { category: "Pull", name: "Lat Pulldown", sets: 3, reps: "8-12" },
+            { category: "Pull", name: "Seated Cable Row", sets: 3, reps: "8-12" },
+            { category: "Pull", name: "Bent Over Row", sets: 3, reps: "8-12" },
+            { category: "Pull", name: "Face Pull", sets: 3, reps: "12-15" },
+            { category: "Pull", name: "Bicep Curl", sets: 3, reps: "10-15" },
+
+            { category: "Legs", name: "Squat", sets: 4, reps: "5-10" },
+            { category: "Legs", name: "Leg Press", sets: 4, reps: "10-15" },
+            { category: "Legs", name: "Romanian Deadlift", sets: 3, reps: "8-12" },
+            { category: "Legs", name: "Leg Extension", sets: 3, reps: "12-15" },
+            { category: "Legs", name: "Leg Curl", sets: 3, reps: "10-15" },
+            { category: "Legs", name: "Calf Raise", sets: 4, reps: "12-20" },
+
+            { category: "Core", name: "Plank", sets: 3, reps: "30-60ث" },
+            { category: "Cardio", name: "Jump Rope", sets: 5, reps: "45-60ث" },
+            { category: "Cardio", name: "Treadmill Walk", sets: 1, reps: "20-30د" }
+        ];
+        
+        const DAY_NUTRITION_PLANS = {
+            0: {
+                preWorkout: { name: "قبل التمرين: موز 120g: 0g بروتين، 25g كارب + واي بروتين 30g: 25g بروتين، 0g كارب" },
+                goals: { protein: 165, carbs: 153 },
+                meals: [
+                    { id: 0, name: "بعد التمرين: دجاج 200g: 60g بروتين، 0g كارب + رز 200g: 0g بروتين، 56g كارب" },
+                    { id: 1, name: "وجبة 2: لحم 180g: 45g بروتين، 0g كارب + رز 150g: 0g بروتين، 42g كارب" },
+                    { id: 2, name: "وجبة 3: بيض 3 حبات (150g): 18g بروتين، 0g كارب + زبادي 170g: 17g بروتين، 0g كارب + خبز 60g: 0g بروتين، 30g كارب" }
+                ]
+            },
+            1: {
+                preWorkout: { name: "قبل التمرين: موز 120g: 0g بروتين، 25g كارب + واي 30g: 25g بروتين، 0g كارب" },
+                goals: { protein: 160, carbs: 150 },
+                meals: [
+                    { id: 0, name: "بعد التمرين: دجاج 200g: 60g بروتين، 0g كارب + رز 200g: 0g بروتين، 56g كارب" },
+                    { id: 1, name: "وجبة 2: تونة 200g: 50g بروتين، 0g كارب + رز 150g: 0g بروتين، 42g كارب" },
+                    { id: 2, name: "وجبة 3: زبادي 170g: 25g بروتين، 0g كارب + فاكهة 150g: 0g بروتين، 25g كارب" }
+                ]
+            },
+            2: {
+                preWorkout: null,
+                goals: { protein: 140, carbs: 100 },
+                meals: [
+                    { id: 0, name: "وجبة 1: بيض 4 حبات (200g): 30g بروتين، 0g كارب + خبز 60g: 0g بروتين، 30g كارب" },
+                    { id: 1, name: "وجبة 2: دجاج 200g: 60g بروتين، 0g كارب + رز 150g: 0g بروتين، 42g كارب" },
+                    { id: 2, name: "وجبة 3: تونة 100g: 25g بروتين، 0g كارب + فاكهة 150g: 0g بروتين، 25g كارب" }
+                ]
+            },
+            3: {
+                preWorkout: { name: "قبل التمرين: موز 120g: 0g بروتين، 25g كارب + واي 30g: 25g بروتين، 0g كارب" },
+                goals: { protein: 170, carbs: 180 },
+                meals: [
+                    { id: 0, name: "بعد التمرين: دجاج 200g: 60g بروتين، 0g كارب + رز 250g: 0g بروتين، 70g كارب" },
+                    { id: 1, name: "وجبة 2: لحم 200g: 50g بروتين، 0g كارب + رز 200g: 0g بروتين، 56g كارب" },
+                    { id: 2, name: "وجبة 3: زبادي 170g: 17g بروتين، 0g كارب + بيض 2 حبة (100g): 12g بروتين، 0g كارب + خبز 60g: 0g بروتين، 30g كارب" }
+                ]
+            },
+            4: {
+                preWorkout: { name: "قبل التمرين: موز 120g: 0g بروتين، 25g كارب + واي 30g: 25g بروتين، 0g كارب" },
+                goals: { protein: 160, carbs: 150 },
+                meals: [
+                    { id: 0, name: "بعد التمرين: دجاج 200g: 60g بروتين، 0g كارب + رز 200g: 0g بروتين، 56g كارب" },
+                    { id: 1, name: "وجبة 2: تونة 100g: 25g بروتين، 0g كارب + رز 150g: 0g بروتين، 42g كارب" },
+                    { id: 2, name: "وجبة 3: زبادي 170g: 25g بروتين، 0g كارب + فاكهة 150g: 0g بروتين، 25g كارب" }
+                ]
+            },
+            5: {
+                preWorkout: null,
+                goals: { protein: 140, carbs: 100 },
+                meals: [
+                    { id: 0, name: "وجبة 1: بيض 4 حبات (200g): 30g بروتين، 0g كارب + خبز 60g: 0g بروتين، 30g كارب" },
+                    { id: 1, name: "وجبة 2: دجاج 200g: 60g بروتين، 0g كارب + رز 150g: 0g بروتين، 42g كارب" },
+                    { id: 2, name: "وجبة 3: تونة 100g: 25g بروتين، 0g كارب + فاكهة 150g: 0g بروتين، 25g كارب" }
+                ]
+            },
+            6: {
+                preWorkout: null,
+                goals: { protein: 140, carbs: 100 },
+                meals: [
+                    { id: 0, name: "وجبة 1: بيض 2 حبة (100g): 12g بروتين، 0g كارب + زبادي 170g: 17g بروتين، 0g كارب + خبز 60g: 0g بروتين، 30g كارب" },
+                    { id: 1, name: "وجبة 2: دجاج 200g: 60g بروتين، 0g كارب + رز 100g: 0g بروتين، 28g كارب" },
+                    { id: 2, name: "وجبة 3: تونة 100g: 25g بروتين، 0g كارب + فاكهة 150g: 0g بروتين، 25g كارب" }
+                ]
+            }
+        };
+
+        const DAY_DEFAULT_DATA = {
+            completedExercises: [],
+            completedMeals: [],
+            completedPreWorkout: false,
+            energyLevel: 5,
+            ateAfterWorkout: false,
+            reachedProteinGoal: false,
+            notes: '',
+            consumedProtein: 0,
+            consumedCarbs: 0,
+            completed: false
+        };
+
+        function cloneDeep(value) {
+            return JSON.parse(JSON.stringify(value));
+        }
+
+        function readStorageJson(key, fallback) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return fallback;
+                const parsed = JSON.parse(raw);
+
+                if (Array.isArray(fallback)) {
+                    return Array.isArray(parsed) ? parsed : fallback;
+                }
+
+                if (fallback && typeof fallback === 'object') {
+                    return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : fallback;
+                }
+
+                return parsed ?? fallback;
+            } catch (error) {
+                return fallback;
+            }
+        }
+
+        function useDebouncedStorage(key, value, delay = 250) {
+            useEffect(() => {
+                const timer = setTimeout(() => {
+                    localStorage.setItem(key, JSON.stringify(value));
+                }, delay);
+
+                return () => clearTimeout(timer);
+            }, [key, value, delay]);
+        }
+
+        function toSafeInt(value, fallback = 0, min = 0, max = 9999) {
+            const parsed = parseInt(value, 10);
+            if (!Number.isFinite(parsed)) return fallback;
+            return Math.max(min, Math.min(max, parsed));
+        }
+
+        function getDefaultDayPlan(dayId) {
+            const day = WEEK_DAYS[dayId];
+            const nutrition = DAY_NUTRITION_PLANS[dayId] || { preWorkout: null, goals: { protein: 150, carbs: 150 }, meals: [] };
+
+            return {
+                dayId,
+                exercises: day.exercises.map((exerciseId) => {
+                    const source = EXERCISES.find((item) => item.id === exerciseId);
+                    return {
+                        id: source.id,
+                        name: source.name,
+                        sets: source.sets,
+                        reps: source.reps,
+                        videoUrl: source.videoUrl
+                    };
+                }),
+                nutrition: {
+                    preWorkout: nutrition.preWorkout ? cloneDeep(nutrition.preWorkout) : null,
+                    goals: cloneDeep(nutrition.goals),
+                    meals: nutrition.meals.map((meal) => ({ id: meal.id, name: meal.name }))
+                }
+            };
+        }
+
+        function normalizeDayPlan(dayId, plan) {
+            const fallback = getDefaultDayPlan(dayId);
+            if (!plan || typeof plan !== 'object') return fallback;
+
+            const exercises = Array.isArray(plan.exercises)
+                ? plan.exercises.filter(Boolean).map((exercise, idx) => ({
+                    id: exercise.id ?? `ex-${dayId}-${idx}`,
+                    name: exercise.name || `تمرين ${idx + 1}`,
+                    sets: Number.isFinite(Number(exercise.sets)) ? Number(exercise.sets) : 3,
+                    reps: exercise.reps || '10-12',
+                    videoUrl: exercise.videoUrl || ''
+                }))
+                : fallback.exercises;
+
+            const nutrition = plan.nutrition || {};
+            const meals = Array.isArray(nutrition.meals)
+                ? nutrition.meals.filter(Boolean).map((meal, idx) => ({
+                    id: meal.id ?? `meal-${dayId}-${idx}`,
+                    name: meal.name || `وجبة ${idx + 1}: عنصر: 20g بروتين، 20g كارب`
+                }))
+                : fallback.nutrition.meals;
+
+            return {
+                dayId,
+                exercises,
+                nutrition: {
+                    preWorkout: nutrition.preWorkout && nutrition.preWorkout.name
+                        ? { name: nutrition.preWorkout.name }
+                        : null,
+                    goals: {
+                        protein: Number.isFinite(Number(nutrition.goals?.protein)) ? Number(nutrition.goals.protein) : fallback.nutrition.goals.protein,
+                        carbs: Number.isFinite(Number(nutrition.goals?.carbs)) ? Number(nutrition.goals.carbs) : fallback.nutrition.goals.carbs
+                    },
+                    meals
+                }
+            };
+        }
+
+        function extractMealMacros(mealName) {
+            let protein = 0;
+            let carbs = 0;
+
+            const proteinMatches = mealName.match(/(\d+)g\s*بروتين/g) || [];
+            const carbsMatches = mealName.match(/(\d+)g\s*كارب/g) || [];
+
+            proteinMatches.forEach((chunk) => {
+                const match = chunk.match(/(\d+)g/);
+                if (match) protein += parseInt(match[1], 10);
+            });
+
+            carbsMatches.forEach((chunk) => {
+                const match = chunk.match(/(\d+)g/);
+                if (match) carbs += parseInt(match[1], 10);
+            });
+
+            return { protein, carbs };
+        }
+        
+        // مكونات React
+        function DayTabs({ days, currentDay, onDaySelect, completedDays }) {
+            return (
+                <div className="day-tabs-row flex overflow-x-auto gap-2 mb-5 pb-2 snap-x snap-mandatory">
+                    {days.map(day => (
+                        <button
+                            key={day.id}
+                            className={`day-tab px-3 py-2.5 flex-shrink-0 snap-start ${currentDay === day.id ? 'active' : ''} ${completedDays.includes(day.id) ? 'completed' : ''}`}
+                            onClick={() => onDaySelect(day.id)}
+                        >
+                            <div className="text-center">
+                                <div className="font-bold text-sm sm:text-base">{day.name}</div>
+                                <div className="text-xs sm:text-sm opacity-80">{day.type}</div>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            );
+        }
+        
+        function ProgressBar({ progress }) {
+            return (
+                <div className="card p-4 mb-5">
+                    <div className="flex justify-between items-center mb-2 text-sm sm:text-base">
+                        <span className="font-bold">تقدم اليوم</span>
+                        <span className="font-bold text-secondary">{progress}%</span>
+                    </div>
+                    <div className="progress-bar h-4">
+                        <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+                    </div>
+                </div>
+            );
+        }
+        
+        function ExerciseItem({ exercise, isCompleted, currentWeight, weightHistory, onToggle, onWeightChange }) {
+            const videoSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`شرح ${exercise.name}`)}`;
+
+            return (
+                <div className="card exercise-card p-4 mb-3">
+                    <div className={`exercise-top mb-3 ${isCompleted ? 'completed-surface' : ''}`} dir="ltr">
+                        <div className="exercise-controls">
+                            <button 
+                                onClick={() => onToggle(exercise.id)}
+                                className={`exercise-toggle ${isCompleted ? 'completed' : ''}`}
+                            >
+                                <i className={`fas ${isCompleted ? 'fa-check' : 'fa-circle'}`}></i>
+                            </button>
+
+                            <a 
+                                href={videoSearchUrl}
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="exercise-play"
+                                title="شرح التمرين"
+                                aria-label="شرح التمرين"
+                            >
+                                <i className="fas fa-play"></i>
+                            </a>
+                        </div>
+
+                        <div className="exercise-main" dir="rtl">
+                            <p className={`name ${isCompleted ? 'line-through opacity-70' : ''}`}>
+                                    {exercise.name}
+                            </p>
+                            <div className="meta" dir="rtl">{exercise.sets} مجموعات • {exercise.reps} تكرارات</div>
+                        </div>
+
+                        <div className="exercise-machine">
+                            <i className="fas fa-dumbbell"></i>
+                        </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-start gap-2 mt-2 w-full pr-4" dir="rtl">
+                        <div className="flex items-center gap-1 shrink-0">
+                            <span className="muted-text text-xs sm:text-sm shrink-0">الوزن الحالي</span>
+                            <input
+                                type="number"
+                                value={currentWeight || ''}
+                                onChange={(e) => onWeightChange(exercise.id, e.target.value)}
+                                className="input-surface px-2 py-1.5 w-16 text-center text-sm"
+                                min="0"
+                                step="0.5"
+                            />
+                            <span className="muted-text text-sm shrink-0">kg</span>
+                        </div>
+
+                        <div className="weight-history shrink-0 max-w-full">
+                            {weightHistory.slice().reverse().map((weight, idx, arr) => (
+                                <React.Fragment key={`${weight}-${idx}`}>
+                                    <div
+                                        className={`px-2.5 py-1 rounded-lg text-sm ${idx === arr.length - 1 ? 'text-primary font-bold' : 'muted-text'}`}
+                                        style={idx === arr.length - 1 ? { backgroundColor: 'rgba(242, 202, 80, 0.2)' } : { backgroundColor: 'rgba(137, 127, 103, 0.16)' }}
+                                    >
+                                        <span dir="ltr">{weight}kg</span>
+                                    </div>
+                                    {idx < arr.length - 1 && <span className="muted-text">←</span>}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        function splitFoodAndWeight(text) {
+            const normalized = text.trim();
+            const bracketWeightMatch = normalized.match(/\(([^)]*g)\)\s*$/);
+            if (bracketWeightMatch) {
+                return {
+                    food: normalized.slice(0, bracketWeightMatch.index).trim(),
+                    weight: bracketWeightMatch[1].trim()
+                };
+            }
+
+            const trailingWeightMatch = normalized.match(/^(.*)\s(\d+(?:\.\d+)?g)$/);
+            if (trailingWeightMatch) {
+                return {
+                    food: trailingWeightMatch[1].trim(),
+                    weight: trailingWeightMatch[2].trim()
+                };
+            }
+
+            return { food: normalized, weight: '-' };
+        }
+
+        function parseMealEntries(mealText) {
+            const parts = mealText.split(':');
+            const mealName = parts[0].trim();
+            const details = parts.slice(1).join(':');
+            const entries = details
+                .split('+')
+                .map(entry => entry.trim())
+                .filter(Boolean)
+                .map((entry) => {
+                    const match = entry.match(/^(.*?):\s*(\d+)g بروتين،\s*(\d+)g كارب$/);
+                    if (!match) return null;
+
+                    const { food, weight } = splitFoodAndWeight(match[1]);
+                    return {
+                        food,
+                        weight,
+                        protein: parseInt(match[2], 10),
+                        carbs: parseInt(match[3], 10)
+                    };
+                })
+                .filter(Boolean);
+
+            return { mealName, entries };
+        }
+
+        function parseMealForEditor(mealText) {
+            const parsed = parseMealEntries(mealText);
+            const title = parsed.mealName || 'وجبة';
+            const entries = parsed.entries.length > 0
+                ? parsed.entries.map((entry) => ({
+                    food: entry.food || '',
+                    weight: entry.weight && entry.weight !== '-' ? entry.weight : '',
+                    protein: Number.isFinite(Number(entry.protein)) ? Number(entry.protein) : 0,
+                    carbs: Number.isFinite(Number(entry.carbs)) ? Number(entry.carbs) : 0
+                }))
+                : [{ food: '', weight: '', protein: 0, carbs: 0 }];
+
+            return { title, entries };
+        }
+
+        function buildMealNameFromEditor(model) {
+            const title = (model.title || 'وجبة').trim();
+            const validEntries = (model.entries || []).filter((entry) => {
+                return entry.food && entry.food.trim().length > 0;
+            });
+
+            const entries = (validEntries.length > 0 ? validEntries : [{ food: 'عنصر', weight: '100g', protein: 20, carbs: 20 }])
+                .map((entry) => {
+                    const cleanFood = entry.food.trim();
+                    const cleanWeight = (entry.weight || '').trim();
+                    const protein = Number.isFinite(Number(entry.protein)) ? Number(entry.protein) : 0;
+                    const carbs = Number.isFinite(Number(entry.carbs)) ? Number(entry.carbs) : 0;
+                    const foodWithWeight = cleanWeight ? `${cleanFood} ${cleanWeight}` : cleanFood;
+                    return `${foodWithWeight}: ${protein}g بروتين، ${carbs}g كارب`;
+                });
+
+            return `${title}: ${entries.join(' + ')}`;
+        }
+
+        function NutritionItem({ meal, isCompleted, onToggle }) {
+            const { mealName, entries } = parseMealEntries(meal.name);
+            const proteinEntries = entries.filter(entry => entry.protein > 0);
+            const carbsEntries = entries.filter(entry => entry.carbs > 0);
+            
+            return (
+                <div className="card meal-card p-4 mb-3">
+                    <div className={`meal-shell ${isCompleted ? 'completed-surface' : ''}`}>
+                        <div className="meal-header" dir="ltr">
+                            <button 
+                                onClick={() => onToggle(meal.id)}
+                                className={`meal-check ${isCompleted ? 'done' : ''}`}
+                            >
+                                <i className={`fas ${isCompleted ? 'fa-check' : 'fa-circle'}`}></i>
+                            </button>
+                            <span className={`break-words text-right font-bold ${isCompleted ? 'line-through opacity-70' : ''}`} dir="rtl">
+                                {mealName}
+                            </span>
+                            <span className="meal-dot"></span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                            <div className="macro-box">
+                                <div className="space-y-2">
+                                    {proteinEntries.length > 0 ? (
+                                        proteinEntries.map((entry, idx) => (
+                                            <div key={`protein-${idx}`}>
+                                                <div className="row" dir="rtl">
+                                                    <span className="label-protein">بروتين</span>
+                                                    <span className="pill" dir="ltr">{entry.protein}g</span>
+                                                </div>
+                                                <div className="food" dir="rtl">{entry.food} <span dir="ltr">{entry.weight}</span></div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="muted-text">-</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="macro-box">
+                                <div className="space-y-2">
+                                    {carbsEntries.length > 0 ? (
+                                        carbsEntries.map((entry, idx) => (
+                                            <div key={`carb-${idx}`}>
+                                                <div className="row" dir="rtl">
+                                                    <span className="label-carb">كارب</span>
+                                                    <span className="pill" dir="ltr">{entry.carbs}g</span>
+                                                </div>
+                                                <div className="food" dir="rtl">{entry.food} <span dir="ltr">{entry.weight}</span></div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="muted-text">-</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        function NutritionProgress({ consumedProtein, consumedCarbs, goals }) {
+            const proteinGoal = goals?.protein || 1;
+            const carbsGoal = goals?.carbs || 1;
+            const proteinPercent = Math.min((consumedProtein / proteinGoal) * 100, 100);
+            const carbsPercent = Math.min((consumedCarbs / carbsGoal) * 100, 100);
+            
+            return (
+                <div className="card p-4 mb-6">
+                    <h3 className="font-bold mb-4">تقدم الماكروز اليومي</h3>
+                    
+                    <div className="mb-4">
+                        <div className="flex justify-between mb-1 text-sm sm:text-base">
+                            <span>بروتين</span>
+                            <span>{consumedProtein}g / {proteinGoal}g</span>
+                        </div>
+                        <div className="progress-bar h-3">
+                            <div className="progress-fill" style={{ width: `${proteinPercent}%`, background: 'var(--primary)' }}></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div className="flex justify-between mb-1 text-sm sm:text-base">
+                            <span>كاربوهيدرات</span>
+                            <span>{consumedCarbs}g / {carbsGoal}g</span>
+                        </div>
+                        <div className="progress-bar h-3">
+                            <div className="progress-fill" style={{ width: `${carbsPercent}%`, background: 'var(--secondary)' }}></div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        function DailyCheckIn({ energyLevel, ateAfterWorkout, reachedProteinGoal, notes, onUpdate }) {
+            return (
+                <div className="card p-4 mb-6">
+                    <h3 className="font-bold mb-4">التقييم اليومي</h3>
+                    
+                    <div className="mb-4">
+                        <div className="flex justify-between mb-2">
+                            <span>مستوى الطاقة</span>
+                            <span className="font-bold text-secondary">{energyLevel}/10</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="1"
+                            max="10"
+                            value={energyLevel}
+                            onChange={(e) => onUpdate('energyLevel', toSafeInt(e.target.value, 5, 1, 10))}
+                            className="energy-slider"
+                        />
+                    </div>
+                    
+                    <div className="mb-4">
+                        <div className="flex items-start gap-3 mb-3">
+                            <input
+                                type="checkbox"
+                                id="ateAfterWorkout"
+                                checked={ateAfterWorkout}
+                                onChange={(e) => onUpdate('ateAfterWorkout', e.target.checked)}
+                                className="custom-checkbox"
+                            />
+                            <label htmlFor="ateAfterWorkout" className="cursor-pointer">
+                                أكلت بعد التمرين مباشرة
+                            </label>
+                        </div>
+                        
+                        <div className="flex items-start gap-3">
+                            <input
+                                type="checkbox"
+                                id="reachedProteinGoal"
+                                checked={reachedProteinGoal}
+                                onChange={(e) => onUpdate('reachedProteinGoal', e.target.checked)}
+                                className="custom-checkbox"
+                            />
+                            <label htmlFor="reachedProteinGoal" className="cursor-pointer">
+                                وصلت لهدف البروتين
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label className="block mb-2">ملاحظات اليوم</label>
+                        <textarea
+                            value={notes}
+                            onChange={(e) => onUpdate('notes', e.target.value)}
+                            className="w-full input-surface p-3 text-sm"
+                            rows="3"
+                            placeholder="اكتب ملاحظاتك عن اليوم (الصعوبات، جودة النوم، إلخ)..."
+                        ></textarea>
+                    </div>
+                </div>
+            );
+        }
+        
+        function AnalyticsDashboard({ daysData, themeMode }) {
+            const chartRef = useRef(null);
+            const lineChartRef = useRef(null);
+            const barChartInstanceRef = useRef(null);
+            const lineChartInstanceRef = useRef(null);
+
+            const chartPalette = themeMode === 'gym'
+                ? {
+                    protein: '#8cb5ff',
+                    carbs: '#00c5a4',
+                    line: '#8cb5ff',
+                    lineFill: 'rgba(96, 159, 255, 0.14)',
+                    legend: '#dbe4ee',
+                    tick: '#9fb0c1',
+                    grid: '#2c3b4a'
+                }
+                : {
+                    protein: '#f2ca50',
+                    carbs: '#c7c6c4',
+                    line: '#f2ca50',
+                    lineFill: 'rgba(242, 202, 80, 0.12)',
+                    legend: '#e7dcc0',
+                    tick: '#bcae8b',
+                    grid: '#3f3a2f'
+                };
+            
+            useEffect(() => {
+                if (chartRef.current) {
+                    const ctx = chartRef.current.getContext('2d');
+
+                    if (barChartInstanceRef.current) {
+                        barChartInstanceRef.current.destroy();
+                    }
+                    
+                    const proteinData = WEEK_DAYS.map(day => {
+                        const dayData = daysData[day.id];
+                        return dayData ? dayData.consumedProtein : 0;
+                    });
+                    
+                    const carbsData = WEEK_DAYS.map(day => {
+                        const dayData = daysData[day.id];
+                        return dayData ? dayData.consumedCarbs : 0;
+                    });
+                    
+                    barChartInstanceRef.current = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: WEEK_DAYS.map(day => day.name),
+                            datasets: [
+                                {
+                                    label: 'بروتين (g)',
+                                    data: proteinData,
+                                    backgroundColor: chartPalette.protein,
+                                    borderRadius: 6
+                                },
+                                {
+                                    label: 'كارب (g)',
+                                    data: carbsData,
+                                    backgroundColor: chartPalette.carbs,
+                                    borderRadius: 6
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        color: chartPalette.legend
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    ticks: {
+                                        color: chartPalette.tick
+                                    },
+                                    grid: {
+                                        color: chartPalette.grid
+                                    }
+                                },
+                                y: {
+                                    ticks: {
+                                        color: chartPalette.tick
+                                    },
+                                    grid: {
+                                        color: chartPalette.grid
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                if (lineChartRef.current) {
+                    const ctx = lineChartRef.current.getContext('2d');
+
+                    if (lineChartInstanceRef.current) {
+                        lineChartInstanceRef.current.destroy();
+                    }
+                    
+                    const energyData = WEEK_DAYS.map(day => {
+                        const dayData = daysData[day.id];
+                        return dayData ? dayData.energyLevel : 0;
+                    });
+                    
+                    lineChartInstanceRef.current = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: WEEK_DAYS.map(day => day.name),
+                            datasets: [{
+                                 label: 'مستوى الطاقة',
+                                 data: energyData,
+                                 borderColor: chartPalette.line,
+                                 backgroundColor: chartPalette.lineFill,
+                                 borderWidth: 3,
+                                 fill: true,
+                                 tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        color: chartPalette.legend
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    ticks: {
+                                        color: chartPalette.tick
+                                    },
+                                    grid: {
+                                        color: chartPalette.grid
+                                    }
+                                },
+                                y: {
+                                    min: 0,
+                                    max: 10,
+                                    ticks: {
+                                        color: chartPalette.tick
+                                    },
+                                    grid: {
+                                        color: chartPalette.grid
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                return () => {
+                    if (barChartInstanceRef.current) {
+                        barChartInstanceRef.current.destroy();
+                        barChartInstanceRef.current = null;
+                    }
+                    if (lineChartInstanceRef.current) {
+                        lineChartInstanceRef.current.destroy();
+                        lineChartInstanceRef.current = null;
+                    }
+                };
+            }, [daysData, themeMode]);
+            
+            const completedDays = Object.values(daysData).filter(day => day.completed).length;
+            const totalExercises = Object.values(daysData).reduce((sum, day) => 
+                sum + (day.completedExercises ? day.completedExercises.length : 0), 0);
+            
+            const daysWithData = Object.values(daysData).filter(day => day.consumedProtein > 0);
+            const avgProtein = daysWithData.length > 0 
+                ? Math.round(daysWithData.reduce((sum, day) => sum + day.consumedProtein, 0) / daysWithData.length)
+                : 0;
+            
+            const avgCarbs = daysWithData.length > 0 
+                ? Math.round(daysWithData.reduce((sum, day) => sum + day.consumedCarbs, 0) / daysWithData.length)
+                : 0;
+            
+            return (
+                <div className="mt-8">
+                    <h2 className="text-2xl font-bold mb-6">لوحة التحليلات</h2>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
+                        <div className="card p-4 text-center">
+                            <div className="text-3xl font-bold text-primary mb-2">{completedDays}</div>
+                            <div className="muted-text text-sm">أيام مكتملة</div>
+                        </div>
+                        <div className="card p-4 text-center">
+                            <div className="text-3xl font-bold text-secondary mb-2">{totalExercises}</div>
+                            <div className="muted-text text-sm">تمارين منجزة</div>
+                        </div>
+                        <div className="card p-4 text-center">
+                            <div className="text-3xl font-bold text-primary mb-2">{avgProtein}g</div>
+                            <div className="muted-text text-sm">متوسط البروتين</div>
+                        </div>
+                        <div className="card p-4 text-center">
+                            <div className="text-3xl font-bold text-secondary mb-2">{avgCarbs}g</div>
+                            <div className="muted-text text-sm">متوسط الكارب</div>
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="card p-4">
+                            <h3 className="font-bold mb-4">استهلاك الماكروز الأسبوعي</h3>
+                            <canvas ref={chartRef} height="250"></canvas>
+                        </div>
+                        <div className="card p-4">
+                            <h3 className="font-bold mb-4">مستويات الطاقة الأسبوعية</h3>
+                            <canvas ref={lineChartRef} height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function ProgressMetricsPage({ entries, form, onFormChange, onAdd, onDelete, themeMode }) {
+            const chartRef = useRef(null);
+            const chartInstanceRef = useRef(null);
+
+            const sortedEntries = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const latest = sortedEntries.length > 0 ? sortedEntries[sortedEntries.length - 1] : null;
+            const first = sortedEntries.length > 0 ? sortedEntries[0] : null;
+
+            const chartPalette = themeMode === 'gym'
+                ? {
+                    weight: '#8cb5ff',
+                    fat: '#00c5a4',
+                    tick: '#9fb0c1',
+                    grid: '#2c3b4a'
+                }
+                : {
+                    weight: '#f2ca50',
+                    fat: '#c7c6c4',
+                    tick: '#bcae8b',
+                    grid: '#3f3a2f'
+                };
+
+            useEffect(() => {
+                if (!chartRef.current) return;
+
+                const ctx = chartRef.current.getContext('2d');
+                if (chartInstanceRef.current) {
+                    chartInstanceRef.current.destroy();
+                }
+
+                chartInstanceRef.current = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: sortedEntries.map((entry) => entry.date),
+                        datasets: [
+                            {
+                                label: 'الوزن (kg)',
+                                data: sortedEntries.map((entry) => entry.weight),
+                                borderColor: chartPalette.weight,
+                                backgroundColor: 'transparent',
+                                borderWidth: 2,
+                                tension: 0.3
+                            },
+                            {
+                                label: 'نسبة الدهون (%)',
+                                data: sortedEntries.map((entry) => entry.bodyFat),
+                                borderColor: chartPalette.fat,
+                                backgroundColor: 'transparent',
+                                borderWidth: 2,
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                labels: { color: chartPalette.tick }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: chartPalette.tick },
+                                grid: { color: chartPalette.grid }
+                            },
+                            y: {
+                                ticks: { color: chartPalette.tick },
+                                grid: { color: chartPalette.grid }
+                            }
+                        }
+                    }
+                });
+
+                return () => {
+                    if (chartInstanceRef.current) {
+                        chartInstanceRef.current.destroy();
+                        chartInstanceRef.current = null;
+                    }
+                };
+            }, [entries, themeMode]);
+
+            const weightDiff = latest && first ? (latest.weight - first.weight).toFixed(1) : null;
+            const fatDiff = latest && first ? (latest.bodyFat - first.bodyFat).toFixed(1) : null;
+
+            return (
+                <div className="card planner-root planner-shell p-4 sm:p-5">
+                    <div className="planner-section-head planner-hero">
+                        <div>
+                            <h3 className="planner-title"><i className="fas fa-chart-line"></i> قياس التقدم</h3>
+                            <p className="planner-subtitle">سجل أرقام الجسم أسبوعيًا لمتابعة التغير الحقيقي.</p>
+                        </div>
+                    </div>
+
+                    <div className="card planner-panel p-4">
+                        <div className="planner-section-head">
+                            <div>
+                                <h4 className="planner-title"><i className="fas fa-pen"></i> إضافة قياس جديد</h4>
+                            </div>
+                            <button onClick={onAdd} className="primary-btn px-4 py-2 text-sm"><i className="fas fa-plus ml-1"></i> حفظ القياس</button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                            <div>
+                                <label className="planner-grid-head block mb-1">التاريخ</label>
+                                <input type="date" className="input-surface px-3 py-2 text-sm w-full" value={form.date} onChange={(e) => onFormChange('date', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="planner-grid-head block mb-1">الوزن (kg)</label>
+                                <input type="number" className="input-surface px-3 py-2 text-sm w-full" value={form.weight} onChange={(e) => onFormChange('weight', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="planner-grid-head block mb-1">نسبة الدهون (%)</label>
+                                <input type="number" className="input-surface px-3 py-2 text-sm w-full" value={form.bodyFat} onChange={(e) => onFormChange('bodyFat', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="planner-grid-head block mb-1">محيط الخصر (cm)</label>
+                                <input type="number" className="input-surface px-3 py-2 text-sm w-full" value={form.waist} onChange={(e) => onFormChange('waist', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="planner-grid-head block mb-1">محيط الصدر (cm)</label>
+                                <input type="number" className="input-surface px-3 py-2 text-sm w-full" value={form.chest} onChange={(e) => onFormChange('chest', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="planner-grid-head block mb-1">محيط الذراع (cm)</label>
+                                <input type="number" className="input-surface px-3 py-2 text-sm w-full" value={form.arm} onChange={(e) => onFormChange('arm', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="planner-grid-head block mb-1">محيط الفخذ (cm)</label>
+                                <input type="number" className="input-surface px-3 py-2 text-sm w-full" value={form.thigh} onChange={(e) => onFormChange('thigh', e.target.value)} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                        <div className="card planner-panel p-4">
+                            <p className="planner-subtitle">آخر وزن</p>
+                            <div className="text-2xl font-bold text-primary">{latest ? `${latest.weight} kg` : '--'}</div>
+                        </div>
+                        <div className="card planner-panel p-4">
+                            <p className="planner-subtitle">تغير الوزن</p>
+                            <div className="text-2xl font-bold text-secondary">{weightDiff !== null ? `${weightDiff} kg` : '--'}</div>
+                        </div>
+                        <div className="card planner-panel p-4">
+                            <p className="planner-subtitle">تغير نسبة الدهون</p>
+                            <div className="text-2xl font-bold text-primary">{fatDiff !== null ? `${fatDiff}%` : '--'}</div>
+                        </div>
+                    </div>
+
+                    <div className="card planner-panel p-4">
+                        <h4 className="planner-title mb-2"><i className="fas fa-chart-area"></i> منحنى التقدم</h4>
+                        <canvas ref={chartRef} height="210"></canvas>
+                    </div>
+
+                    <div className="card planner-panel p-4">
+                        <h4 className="planner-title mb-2"><i className="fas fa-clock-rotate-left"></i> السجل</h4>
+                        <div className="space-y-2">
+                            {sortedEntries.length === 0 && <p className="planner-subtitle">لا يوجد قياسات بعد.</p>}
+                            {sortedEntries.slice().reverse().map((entry) => (
+                                <div key={entry.id} className="planner-row flex flex-wrap items-center justify-between gap-2">
+                                    <div className="text-sm">
+                                        <span className="badge">{entry.date}</span>
+                                        <span className="mr-2">وزن: {entry.weight}kg</span>
+                                        <span className="mr-2">دهون: {entry.bodyFat}%</span>
+                                        <span className="mr-2">خصر: {entry.waist}cm</span>
+                                    </div>
+                                    <button className="secondary-btn icon-action-btn" onClick={() => onDelete(entry.id)}>
+                                        <i className="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        function App() {
+            const [currentDay, setCurrentDay] = useState(0);
+            const [currentPage, setCurrentPage] = useState('tracker');
+            const [editorDay, setEditorDay] = useState(0);
+            const [themeMode, setThemeMode] = useState(() => localStorage.getItem('app_theme_mode') || 'calm');
+            const [aiForm, setAiForm] = useState({
+                sex: 'male',
+                weight: 78,
+                height: 176,
+                bodyFat: 20,
+                goal: 'muscle_gain',
+                experience: 'beginner',
+                sessionsPerWeek: 5,
+                foodStyle: 'balanced',
+                excludedFoods: ''
+            });
+            const [aiSummary, setAiSummary] = useState('');
+            const [aiDialogOpen, setAiDialogOpen] = useState(false);
+            const [aiIsGenerating, setAiIsGenerating] = useState(false);
+            const [aiDraftPlan, setAiDraftPlan] = useState(null);
+            const [metricsEntries, setMetricsEntries] = useState(() => readStorageJson('progress_metrics_entries', []));
+            const [metricsForm, setMetricsForm] = useState(() => ({
+                date: new Date().toISOString().slice(0, 10),
+                weight: 0,
+                bodyFat: 0,
+                waist: 0,
+                chest: 0,
+                arm: 0,
+                thigh: 0
+            }));
+            const [daysData, setDaysData] = useState(() => readStorageJson('workout_nutrition_data', {}));
+
+            const [customPlans, setCustomPlans] = useState(() => readStorageJson('custom_workout_plans', {}));
+            
+            const [weightsData, setWeightsData] = useState(() => readStorageJson('workout_weights_simple', {}));
+            
+            // حفظ البيانات في localStorage (debounced)
+            useDebouncedStorage('workout_nutrition_data', daysData);
+            useDebouncedStorage('workout_weights_simple', weightsData);
+            useDebouncedStorage('custom_workout_plans', customPlans);
+            useDebouncedStorage('progress_metrics_entries', metricsEntries);
+
+            useEffect(() => {
+                localStorage.setItem('app_theme_mode', themeMode);
+                document.body.classList.toggle('theme-gym', themeMode === 'gym');
+            }, [themeMode]);
+
+            const updateAiForm = (field, value) => {
+                setAiForm(prev => ({ ...prev, [field]: value }));
+            };
+
+            const updateMetricsForm = (field, value) => {
+                setMetricsForm(prev => ({ ...prev, [field]: value }));
+            };
+
+            const handleAddMetricsEntry = () => {
+                if (!metricsForm.date || !Number(metricsForm.weight)) {
+                    alert('يرجى إدخال التاريخ والوزن على الأقل.');
+                    return;
+                }
+
+                const entry = {
+                    id: `m-${Date.now()}`,
+                    date: metricsForm.date,
+                    weight: Number(metricsForm.weight) || 0,
+                    bodyFat: Number(metricsForm.bodyFat) || 0,
+                    waist: Number(metricsForm.waist) || 0,
+                    chest: Number(metricsForm.chest) || 0,
+                    arm: Number(metricsForm.arm) || 0,
+                    thigh: Number(metricsForm.thigh) || 0
+                };
+
+                setMetricsEntries(prev => [...prev.filter(item => item.date !== entry.date), entry]);
+            };
+
+            const handleDeleteMetricsEntry = (id) => {
+                setMetricsEntries(prev => prev.filter(item => item.id !== id));
+            };
+
+            const roundTo = (num, step = 5) => Math.max(step, Math.round(num / step) * step);
+
+            const buildMealString = (title, items) => {
+                return `${title}: ${items.map(item => `${item.food} ${item.weight}g: ${item.protein}g بروتين، ${item.carbs}g كارب`).join(' + ')}`;
+            };
+
+            const createProteinItem = (food, protein, carbs = 0) => {
+                const density = {
+                    'دجاج': 0.30,
+                    'لحم': 0.26,
+                    'تونة': 0.25,
+                    'بيض': 0.12,
+                    'واي بروتين': 0.8,
+                    'زبادي': 0.1
+                };
+                const safeProtein = Math.max(0, Math.round(protein));
+                const grams = roundTo(safeProtein / (density[food] || 0.25));
+                return { food, weight: grams, protein: safeProtein, carbs: Math.max(0, Math.round(carbs)) };
+            };
+
+            const createCarbItem = (food, carbs, protein = 0) => {
+                const density = {
+                    'رز': 0.28,
+                    'موز': 0.23,
+                    'خبز': 0.5,
+                    'شوفان': 0.66,
+                    'فاكهة': 0.16
+                };
+                const safeCarbs = Math.max(0, Math.round(carbs));
+                const grams = roundTo(safeCarbs / (density[food] || 0.28));
+                return { food, weight: grams, protein: Math.max(0, Math.round(protein)), carbs: safeCarbs };
+            };
+
+            const getGoalMacroProfile = (goal) => {
+                if (goal === 'fat_loss') return { proteinPerKg: 2.2, carbsPerKg: 1.9, label: 'خسارة دهون' };
+                if (goal === 'maintain') return { proteinPerKg: 1.9, carbsPerKg: 2.8, label: 'ثبات' };
+                return { proteinPerKg: 2.0, carbsPerKg: 3.7, label: 'بناء عضل' };
+            };
+
+            const getExperienceLabel = (level) => {
+                if (level === 'intermediate') return 'متوسط';
+                return 'مبتدئ';
+            };
+
+            const getCarbMultiplierByDay = (dayType) => {
+                if (dayType.includes('Legs')) return 1.2;
+                if (dayType.includes('Push') || dayType.includes('Pull')) return 1;
+                if (dayType.includes('Upper')) return 0.9;
+                if (dayType.includes('Light Activity')) return 0.75;
+                return 0.62;
+            };
+
+            const isCompoundExercise = (name) => {
+                return /(Bench|Press|Squat|Row|Deadlift|Pull-ups|Pulldown)/i.test(name || '');
+            };
+
+            const createSeededRandom = (seedInput) => {
+                let seed = seedInput % 2147483647;
+                if (seed <= 0) seed += 2147483646;
+                return () => {
+                    seed = seed * 16807 % 2147483647;
+                    return (seed - 1) / 2147483646;
+                };
+            };
+
+            const pickFromPool = (pool, count, randomFn) => {
+                const source = [...pool];
+                const picked = [];
+                while (source.length > 0 && picked.length < count) {
+                    const idx = Math.floor(randomFn() * source.length);
+                    picked.push(source.splice(idx, 1)[0]);
+                }
+                return picked;
+            };
+
+            const parseExcludedFoods = (text) => {
+                return (text || '')
+                    .split(',')
+                    .map((item) => item.trim().toLowerCase())
+                    .filter(Boolean);
+            };
+
+            const isExcluded = (food, excludedList) => {
+                const normalized = String(food || '').toLowerCase();
+                return excludedList.some((item) => normalized.includes(item));
+            };
+
+            const exerciseLibraryMap = useMemo(() => {
+                const map = new Map();
+                BASIC_GYM_EXERCISES.forEach((exercise) => {
+                    map.set(exercise.name, exercise);
+                });
+                return map;
+            }, []);
+
+            const groupedExerciseOptions = useMemo(() => {
+                const order = ['Push', 'Pull', 'Legs', 'Core', 'Cardio'];
+                const grouped = new Map();
+
+                order.forEach((category) => grouped.set(category, []));
+                BASIC_GYM_EXERCISES.forEach((exercise) => {
+                    const category = exercise.category || 'Other';
+                    if (!grouped.has(category)) grouped.set(category, []);
+                    grouped.get(category).push(exercise);
+                });
+
+                return [...grouped.entries()]
+                    .map(([category, items]) => ({ category, items }))
+                    .filter((group) => group.items.length > 0);
+            }, []);
+
+            const generateExercisesByGoal = (dayId, goal, experience, randomFn) => {
+                const day = WEEK_DAYS[dayId];
+                const type = day.type;
+                const presets = goal === 'fat_loss'
+                    ? { compoundSets: 4, compoundReps: '8-12', accessorySets: 3, accessoryReps: '12-15' }
+                    : goal === 'maintain'
+                        ? { compoundSets: 4, compoundReps: '6-10', accessorySets: 3, accessoryReps: '10-12' }
+                        : { compoundSets: 5, compoundReps: '5-8', accessorySets: 4, accessoryReps: '8-12' };
+
+                const levelCap = experience === 'intermediate' ? 6 : 4;
+                let targetCategory = 'Push';
+                if (type.includes('Pull')) targetCategory = 'Pull';
+                else if (type.includes('Legs')) targetCategory = 'Legs';
+                else if (type.includes('Upper')) targetCategory = 'Upper';
+                else if (type.includes('Light Activity')) targetCategory = 'Light';
+                else if (type.includes('Rest')) targetCategory = 'Rest';
+
+                if (targetCategory === 'Rest') return [];
+
+                let candidates = [];
+                if (targetCategory === 'Upper') {
+                    candidates = BASIC_GYM_EXERCISES.filter((exercise) => exercise.category === 'Push' || exercise.category === 'Pull');
+                } else if (targetCategory === 'Light') {
+                    candidates = BASIC_GYM_EXERCISES.filter((exercise) => exercise.category === 'Cardio' || exercise.category === 'Core');
+                } else {
+                    candidates = BASIC_GYM_EXERCISES.filter((exercise) => exercise.category === targetCategory);
+                }
+
+                if (candidates.length === 0) return getDefaultDayPlan(dayId).exercises;
+
+                const desiredCount = Math.min(candidates.length, experience === 'intermediate' ? 6 : 5);
+                const selected = pickFromPool(candidates, Math.max(3, desiredCount), randomFn);
+
+                return selected.slice(0, levelCap).map((exercise, index) => {
+                    const compound = isCompoundExercise(exercise.name);
+                    const isLight = targetCategory === 'Light';
+                    return {
+                        id: createEditorId(`gen-${dayId}-${index}`),
+                        name: exercise.name,
+                        sets: isLight ? 3 : (compound ? presets.compoundSets : presets.accessorySets),
+                        reps: isLight ? (exercise.reps || '12-20') : (compound ? presets.compoundReps : presets.accessoryReps),
+                        videoUrl: ''
+                    };
+                });
+            };
+
+            const generateNutritionByGoal = (dayId, form, randomFn) => {
+                const day = WEEK_DAYS[dayId];
+                const profile = getGoalMacroProfile(form.goal);
+                const weight = Math.max(35, Number(form.weight) || 75);
+                const height = Math.max(140, Number(form.height) || 170);
+                const bodyFat = Math.min(55, Math.max(6, Number(form.bodyFat) || 20));
+                const leanMass = weight * (1 - bodyFat / 100);
+                const bmr = form.sex === 'female'
+                    ? Math.round((10 * weight) + (6.25 * height) - (5 * 28) - 161)
+                    : Math.round((10 * weight) + (6.25 * height) - (5 * 28) + 5);
+                const maintenance = Math.round(Math.max(bmr * 1.3, (370 + (21.6 * leanMass)) * 1.35));
+                const adjustedCalories = form.goal === 'fat_loss'
+                    ? maintenance - 350
+                    : form.goal === 'maintain'
+                        ? maintenance
+                        : maintenance + 280;
+
+                const proteinGoal = Math.round(weight * profile.proteinPerKg * (day.type.includes('Rest') ? 0.95 : 1));
+                const fatGoal = Math.round(Math.max(45, weight * (form.goal === 'fat_loss' ? 0.7 : 0.8)));
+                const carbFromCalories = Math.round(Math.max(80, (adjustedCalories - (proteinGoal * 4) - (fatGoal * 9)) / 4));
+                const carbsGoal = Math.round(Math.max(80, carbFromCalories * getCarbMultiplierByDay(day.type)));
+                const hasWorkout = !day.type.includes('Rest');
+
+                const excludedFoods = parseExcludedFoods(form.excludedFoods);
+
+                const proteinFoods = ['دجاج', 'لحم', 'تونة', 'بيض', 'زبادي', 'واي بروتين'];
+                const carbFoods = ['رز', 'خبز', 'شوفان', 'موز', 'فاكهة'];
+
+                const filteredProteinFoods = proteinFoods.filter((food) => !isExcluded(food, excludedFoods));
+                const filteredCarbFoods = carbFoods.filter((food) => !isExcluded(food, excludedFoods));
+
+                const proteinPool = filteredProteinFoods.length > 0 ? filteredProteinFoods : proteinFoods;
+                const carbPool = filteredCarbFoods.length > 0 ? filteredCarbFoods : carbFoods;
+
+                const pickProtein = () => proteinPool[Math.floor(randomFn() * proteinPool.length)];
+                const pickCarb = () => carbPool[Math.floor(randomFn() * carbPool.length)];
+
+                let preWorkout = null;
+                const meals = [];
+
+                const p1 = Math.round(proteinGoal * (hasWorkout ? 0.36 : 0.34));
+                const p2 = Math.round(proteinGoal * (hasWorkout ? 0.34 : 0.33));
+                const p3 = Math.max(0, proteinGoal - p1 - p2);
+
+                const cPre = hasWorkout ? Math.round(carbsGoal * 0.2) : 0;
+                const c1 = Math.round(carbsGoal * (hasWorkout ? 0.4 : 0.38));
+                const c2 = Math.round(carbsGoal * (hasWorkout ? 0.26 : 0.32));
+                const c3 = Math.max(0, carbsGoal - cPre - c1 - c2);
+
+                const foodStyleFactor = form.foodStyle === 'low_carb' ? 0.82 : form.foodStyle === 'high_protein' ? 0.92 : 1;
+
+                if (hasWorkout) {
+                    preWorkout = {
+                        name: buildMealString('قبل التمرين', [
+                            createCarbItem(pickCarb(), Math.round(cPre * 0.55 * foodStyleFactor), 0),
+                            createProteinItem(pickProtein(), Math.round(p3 * 0.45), Math.round(cPre * 0.45 * foodStyleFactor))
+                        ])
+                    };
+                }
+
+                meals.push({
+                    id: 0,
+                    name: buildMealString(hasWorkout ? 'بعد التمرين' : 'وجبة 1', [
+                        createProteinItem(pickProtein(), p1, 0),
+                        createCarbItem(pickCarb(), Math.round(c1 * foodStyleFactor), 0)
+                    ])
+                });
+
+                meals.push({
+                    id: 1,
+                    name: buildMealString('وجبة 2', [
+                        createProteinItem(pickProtein(), p2, 0),
+                        createCarbItem(pickCarb(), Math.round(c2 * foodStyleFactor), 0)
+                    ])
+                });
+
+                meals.push({
+                    id: 2,
+                    name: buildMealString('وجبة 3', [
+                        createProteinItem(pickProtein(), Math.round(p3 * 0.6), 0),
+                        createCarbItem(pickCarb(), Math.round(c3 * foodStyleFactor), Math.round(p3 * 0.4))
+                    ])
+                });
+
+                return {
+                    preWorkout,
+                    goals: { protein: proteinGoal, carbs: carbsGoal },
+                    meals
+                };
+            };
+
+            const buildLocalGeneratedPlan = (form) => {
+                const sessions = toSafeInt(form.sessionsPerWeek, 5, 3, 7);
+                const seed = Date.now();
+                const randomFn = createSeededRandom(seed);
+                const generated = {};
+
+                WEEK_DAYS.forEach((day) => {
+                    generated[day.id] = {
+                        dayId: day.id,
+                        exercises: generateExercisesByGoal(day.id, form.goal, form.experience, randomFn),
+                        nutrition: generateNutritionByGoal(day.id, form, randomFn)
+                    };
+                });
+
+                const activeDayIds = WEEK_DAYS.filter((d) => !d.type.includes('Rest')).map((d) => d.id);
+                const reducedDays = activeDayIds.slice(sessions);
+                reducedDays.forEach((dayId) => {
+                    generated[dayId].exercises = [];
+                });
+
+                const avgProtein = Math.round(Object.values(generated).reduce((sum, day) => sum + day.nutrition.goals.protein, 0) / WEEK_DAYS.length);
+                const avgCarbs = Math.round(Object.values(generated).reduce((sum, day) => sum + day.nutrition.goals.carbs, 0) / WEEK_DAYS.length);
+                const goalLabel = getGoalMacroProfile(form.goal).label;
+                const experienceLabel = getExperienceLabel(form.experience);
+                const summary = `تم إنشاء خطة تلقائية لهدف ${goalLabel} بمستوى ${experienceLabel} وعدد ${sessions} أيام تدريب أسبوعيًا، بمتوسط ${avgProtein}g بروتين و${avgCarbs}g كارب يوميًا.`;
+
+                return { generated, summary };
+            };
+
+            const normalizeGeneratedPlan = (generated) => {
+                const safe = {};
+                WEEK_DAYS.forEach((day) => {
+                    safe[day.id] = normalizeDayPlan(day.id, generated?.[day.id] || null);
+                });
+                return safe;
+            };
+
+            const tryGenerateGeminiPlan = async (form) => {
+                try {
+                    const response = await fetch('/api/gemini-plan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            profile: form,
+                            weekDays: WEEK_DAYS,
+                            exercisePool: BASIC_GYM_EXERCISES,
+                            instructions: 'Return weekly plan in compatible schema: generated{0..6}, each day has dayId, exercises[], nutrition{preWorkout,goals,meals}. Keep meal name format exactly compatible.'
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const text = await response.text();
+                        throw new Error(text || 'gemini endpoint unavailable');
+                    }
+                    const payload = await response.json();
+                    const generated = normalizeGeneratedPlan(payload?.generated || payload);
+                    const summary = payload?.summary || 'تم إنشاء الخطة عبر Gemini.';
+                    return { generated, summary, source: 'gemini' };
+                } catch (error) {
+                    throw error;
+                }
+            };
+
+            const handleGenerateAiPlan = async () => {
+                const weight = Number(aiForm.weight);
+                const height = Number(aiForm.height);
+                const bodyFat = Number(aiForm.bodyFat);
+
+                if (!weight || !height || !bodyFat) {
+                    alert('يرجى تعبئة بيانات الطول والوزن ونسبة الدهون أولاً.');
+                    return;
+                }
+
+                setAiIsGenerating(true);
+                try {
+                    const finalResult = await tryGenerateGeminiPlan(aiForm);
+                    setAiDraftPlan(finalResult.generated);
+                    setAiSummary(finalResult.summary);
+                    setAiDialogOpen(false);
+                } catch (error) {
+                    alert('تعذر توليد الخطة من Gemini. تأكد من إعداد endpoint ومفتاح API ثم حاول مرة أخرى.');
+                } finally {
+                    setAiIsGenerating(false);
+                }
+            };
+
+            const handleApplyAiDraft = () => {
+                if (!aiDraftPlan) return;
+                setCustomPlans(aiDraftPlan);
+                setEditorDay(0);
+                setAiDraftPlan(null);
+            };
+            
+            const currentDayData = {
+                ...DAY_DEFAULT_DATA,
+                ...(daysData[currentDay] || {})
+            };
+
+            const getDayPlan = useCallback((dayId) => {
+                return normalizeDayPlan(dayId, customPlans[dayId] ? cloneDeep(customPlans[dayId]) : null);
+            }, [customPlans]);
+
+            useEffect(() => {
+                setDaysData(prev => {
+                    let changed = false;
+                    const next = { ...prev };
+
+                    Object.keys(prev).forEach((dayKey) => {
+                        const dayId = Number(dayKey);
+                        if (!Number.isFinite(dayId) || !WEEK_DAYS[dayId]) return;
+
+                        const plan = getDayPlan(dayId);
+                        const validExerciseIds = new Set((plan.exercises || []).map((exercise) => exercise.id));
+                        const validMealIds = new Set((plan.nutrition?.meals || []).map((meal) => meal.id));
+
+                        const rawDayData = { ...DAY_DEFAULT_DATA, ...(prev[dayKey] || {}) };
+                        const cleanedExercises = (rawDayData.completedExercises || []).filter((id) => validExerciseIds.has(id));
+                        const cleanedMeals = (rawDayData.completedMeals || []).filter((id) => validMealIds.has(id));
+                        const cleanedPreWorkout = !!plan.nutrition?.preWorkout && !!rawDayData.completedPreWorkout;
+
+                        if (
+                            cleanedExercises.length !== (rawDayData.completedExercises || []).length ||
+                            cleanedMeals.length !== (rawDayData.completedMeals || []).length ||
+                            cleanedPreWorkout !== !!rawDayData.completedPreWorkout
+                        ) {
+                            changed = true;
+                            next[dayKey] = {
+                                ...rawDayData,
+                                completedExercises: cleanedExercises,
+                                completedMeals: cleanedMeals,
+                                completedPreWorkout: cleanedPreWorkout
+                            };
+                        }
+                    });
+
+                    return changed ? next : prev;
+                });
+            }, [getDayPlan]);
+
+            const currentDayPlan = useMemo(() => getDayPlan(currentDay), [getDayPlan, currentDay]);
+            const currentNutritionPlan = currentDayPlan.nutrition;
+            const currentDayMeals = currentNutritionPlan.meals;
+            const currentPreWorkout = currentNutritionPlan.preWorkout;
+            const currentGoals = currentNutritionPlan.goals;
+
+            const dayExercises = currentDayPlan.exercises;
+            const validExerciseIds = useMemo(() => new Set(dayExercises.map((exercise) => exercise.id)), [dayExercises]);
+            const validMealIds = useMemo(() => new Set(currentDayMeals.map((meal) => meal.id)), [currentDayMeals]);
+            const mealsById = useMemo(() => new Map(currentDayMeals.map((meal) => [meal.id, meal])), [currentDayMeals]);
+
+            const completedExercises = (currentDayData.completedExercises || []).filter((id) => validExerciseIds.has(id));
+            const completedMeals = (currentDayData.completedMeals || []).filter((id) => validMealIds.has(id));
+            const completedPreWorkout = !!currentDayData.completedPreWorkout;
+            
+            // حساب تقدم اليوم
+            const totalTasks = dayExercises.length + currentDayMeals.length + (currentPreWorkout ? 1 : 0) + 2;
+            const completedTasks = completedExercises.length + completedMeals.length +
+                (completedPreWorkout ? 1 : 0) +
+                (currentDayData.ateAfterWorkout ? 1 : 0) + (currentDayData.reachedProteinGoal ? 1 : 0);
+            const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            
+            // حساب الماكروز المستهلكة
+            const calculateMacros = useCallback((selectedMeals = completedMeals, includePreWorkout = completedPreWorkout) => {
+                let protein = 0;
+                let carbs = 0;
+
+                const mealIds = Array.isArray(selectedMeals)
+                    ? selectedMeals.filter((mealId) => mealsById.has(mealId))
+                    : [];
+                
+                mealIds.forEach(mealId => {
+                    const meal = mealsById.get(mealId);
+                    if (meal) {
+                        const mealMacros = extractMealMacros(meal.name);
+                        protein += mealMacros.protein;
+                        carbs += mealMacros.carbs;
+                    }
+                });
+
+                if (includePreWorkout && currentPreWorkout) {
+                    const preWorkoutMacros = extractMealMacros(currentPreWorkout.name);
+                    protein += preWorkoutMacros.protein;
+                    carbs += preWorkoutMacros.carbs;
+                }
+                
+                return { protein, carbs };
+            }, [completedMeals, completedPreWorkout, currentPreWorkout, mealsById]);
+            
+            const { protein: consumedProtein, carbs: consumedCarbs } = calculateMacros();
+            
+            const handleExerciseToggle = (exerciseId) => {
+                setDaysData(prev => {
+                    const dayData = {
+                        ...DAY_DEFAULT_DATA,
+                        ...(prev[currentDay] || {})
+                    };
+                    const safeCompletedExercises = (dayData.completedExercises || []).filter((id) => validExerciseIds.has(id));
+                    const newCompletedExercises = safeCompletedExercises.includes(exerciseId)
+                        ? safeCompletedExercises.filter(id => id !== exerciseId)
+                        : [...safeCompletedExercises, exerciseId];
+                    
+                    return {
+                        ...prev,
+                        [currentDay]: {
+                            ...dayData,
+                            completedExercises: newCompletedExercises
+                        }
+                    };
+                });
+            };
+            
+            const handleMealToggle = (mealId) => {
+                setDaysData(prev => {
+                    const dayData = {
+                        ...DAY_DEFAULT_DATA,
+                        ...(prev[currentDay] || {})
+                    };
+                    const safeCompletedMeals = (dayData.completedMeals || []).filter((id) => validMealIds.has(id));
+                    const newCompletedMeals = safeCompletedMeals.includes(mealId)
+                        ? safeCompletedMeals.filter(id => id !== mealId)
+                        : [...safeCompletedMeals, mealId];
+
+                    const { protein, carbs } = calculateMacros(newCompletedMeals, dayData.completedPreWorkout);
+                    
+                    return {
+                        ...prev,
+                        [currentDay]: {
+                            ...dayData,
+                            completedMeals: newCompletedMeals,
+                            consumedProtein: protein,
+                            consumedCarbs: carbs
+                        }
+                    };
+                });
+            };
+
+            const handlePreWorkoutToggle = () => {
+                setDaysData(prev => {
+                    const dayData = {
+                        ...DAY_DEFAULT_DATA,
+                        ...(prev[currentDay] || {})
+                    };
+
+                    const newCompletedPreWorkout = !dayData.completedPreWorkout;
+                    const safeCompletedMeals = (dayData.completedMeals || []).filter((id) => validMealIds.has(id));
+                    const { protein, carbs } = calculateMacros(safeCompletedMeals, newCompletedPreWorkout);
+
+                    return {
+                        ...prev,
+                        [currentDay]: {
+                            ...dayData,
+                            completedPreWorkout: newCompletedPreWorkout,
+                            consumedProtein: protein,
+                            consumedCarbs: carbs
+                        }
+                    };
+                });
+            };
+            
+            const handleWeightChange = (exerciseId, weight) => {
+                setWeightsData(prev => {
+                    const current = prev[exerciseId] || { current: '', history: [] };
+                    return {
+                        ...prev,
+                        [exerciseId]: {
+                            ...current,
+                            current: weight
+                        }
+                    };
+                });
+            };
+            
+            const handleDailyUpdate = (field, value) => {
+                setDaysData(prev => {
+                    const dayData = {
+                        ...DAY_DEFAULT_DATA,
+                        ...(prev[currentDay] || {})
+                    };
+                    return {
+                        ...prev,
+                        [currentDay]: {
+                            ...dayData,
+                            [field]: value
+                        }
+                    };
+                });
+            };
+            
+            const handleCompleteDay = () => {
+                setDaysData(prev => {
+                    const dayData = {
+                        ...DAY_DEFAULT_DATA,
+                        ...(prev[currentDay] || {})
+                    };
+                    return {
+                        ...prev,
+                        [currentDay]: {
+                            ...dayData,
+                            completed: true,
+                            consumedProtein,
+                            consumedCarbs
+                        }
+                    };
+                });
+                
+                // تحديث سجل الأوزان
+                setWeightsData(prev => {
+                    const newWeights = { ...prev };
+                    dayExercises.forEach(exercise => {
+                        const weightData = newWeights[exercise.id] || { current: '', history: [] };
+                        if (weightData.current) {
+                            const newHistory = [weightData.current, ...weightData.history].slice(0, 3);
+                            newWeights[exercise.id] = {
+                                current: weightData.current,
+                                history: newHistory
+                            };
+                        }
+                    });
+                    return newWeights;
+                });
+                
+                alert('تم إتمام اليوم بنجاح! تم تحديث سجل الأوزان.');
+            };
+            
+            const handleResetWeek = () => {
+                if (confirm('هل أنت متأكد من إعادة تعيين الأسبوع؟ سيتم مسح جميع الإنجازات ولكن سيتم حفظ الأوزان الحالية في السجل.')) {
+                    // حفظ الأوزان الحالية في السجل قبل المسح
+                    const newWeightsData = { ...weightsData };
+                    Object.keys(newWeightsData).forEach(exerciseId => {
+                        const weightData = newWeightsData[exerciseId];
+                        if (weightData.current) {
+                            const newHistory = [weightData.current, ...weightData.history].slice(0, 3);
+                            newWeightsData[exerciseId] = {
+                                current: '',
+                                history: newHistory
+                            };
+                        }
+                    });
+                    
+                    setWeightsData(newWeightsData);
+                    setDaysData({});
+                    
+                    alert('تم إعادة تعيين الأسبوع بنجاح! تم أرشفة الأوزان الحالية.');
+                }
+            };
+
+            const handleResetAllWeights = () => {
+                if (confirm('هل أنت متأكد من إعادة تعيين جميع الأوزان؟ سيتم حذف الأوزان الحالية والسجل بالكامل.')) {
+                    setWeightsData({});
+                    alert('تمت إعادة تعيين جميع الأوزان بنجاح.');
+                }
+            };
+
+            const updateEditorDayPlan = (updater) => {
+                setCustomPlans(prev => {
+                    const base = normalizeDayPlan(editorDay, prev[editorDay] ? cloneDeep(prev[editorDay]) : null);
+                    const updated = updater(base);
+                    return {
+                        ...prev,
+                        [editorDay]: updated
+                    };
+                });
+            };
+
+            const createEditorId = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+
+            const handleEditorExerciseChange = (index, field, value) => {
+                updateEditorDayPlan((plan) => {
+                    if (field === 'sets') {
+                        plan.exercises[index][field] = toSafeInt(value, 3, 0, 20);
+                    } else {
+                        plan.exercises[index][field] = value;
+                    }
+                    return plan;
+                });
+            };
+
+            const handleEditorExerciseNameSelect = (index, name) => {
+                updateEditorDayPlan((plan) => {
+                    const item = plan.exercises[index];
+                    if (!item) return plan;
+
+                    item.name = name;
+                    const preset = exerciseLibraryMap.get(name);
+                    if (preset) {
+                        item.sets = preset.sets;
+                        item.reps = preset.reps;
+                    }
+                    return plan;
+                });
+            };
+
+            const handleEditorAddExercise = () => {
+                updateEditorDayPlan((plan) => {
+                    const fallbackExercise = BASIC_GYM_EXERCISES[0] || { name: 'Bench Press', sets: 3, reps: '10-12' };
+                    plan.exercises.push({
+                        id: createEditorId('ex'),
+                        name: fallbackExercise.name,
+                        sets: fallbackExercise.sets,
+                        reps: fallbackExercise.reps,
+                        videoUrl: ''
+                    });
+                    return plan;
+                });
+            };
+
+            const handleEditorRemoveExercise = (index) => {
+                updateEditorDayPlan((plan) => {
+                    plan.exercises.splice(index, 1);
+                    return plan;
+                });
+            };
+
+            const updateEditorMealModel = (mealIndex, updater) => {
+                updateEditorDayPlan((plan) => {
+                    const currentMeal = plan.nutrition.meals[mealIndex];
+                    if (!currentMeal) return plan;
+
+                    const model = parseMealForEditor(currentMeal.name);
+                    const updatedModel = updater(model);
+                    plan.nutrition.meals[mealIndex].name = buildMealNameFromEditor(updatedModel);
+                    return plan;
+                });
+            };
+
+            const handleEditorMealTitleChange = (mealIndex, title) => {
+                updateEditorMealModel(mealIndex, (model) => ({
+                    ...model,
+                    title
+                }));
+            };
+
+            const handleEditorMealEntryChange = (mealIndex, entryIndex, field, value) => {
+                updateEditorMealModel(mealIndex, (model) => {
+                    const entries = [...model.entries];
+                    const currentEntry = entries[entryIndex] || { food: '', weight: '', protein: 0, carbs: 0 };
+                    const nextEntry = { ...currentEntry };
+
+                    if (field === 'protein' || field === 'carbs') {
+                        nextEntry[field] = toSafeInt(value, 0, 0, 1000);
+                    } else {
+                        nextEntry[field] = value;
+                    }
+
+                    entries[entryIndex] = nextEntry;
+                    return { ...model, entries };
+                });
+            };
+
+            const handleEditorAddMealEntry = (mealIndex) => {
+                updateEditorMealModel(mealIndex, (model) => ({
+                    ...model,
+                    entries: [...model.entries, { food: 'مكون جديد', weight: '100g', protein: 20, carbs: 20 }]
+                }));
+            };
+
+            const handleEditorRemoveMealEntry = (mealIndex, entryIndex) => {
+                updateEditorMealModel(mealIndex, (model) => {
+                    const entries = model.entries.filter((_, idx) => idx !== entryIndex);
+                    return {
+                        ...model,
+                        entries: entries.length > 0 ? entries : [{ food: '', weight: '', protein: 0, carbs: 0 }]
+                    };
+                });
+            };
+
+            const handleEditorAddMeal = () => {
+                updateEditorDayPlan((plan) => {
+                    plan.nutrition.meals.push({
+                        id: createEditorId('meal'),
+                        name: 'وجبة جديدة: عنصر 1 100g: 20g بروتين، 20g كارب'
+                    });
+                    return plan;
+                });
+            };
+
+            const handleEditorRemoveMeal = (index) => {
+                updateEditorDayPlan((plan) => {
+                    plan.nutrition.meals.splice(index, 1);
+                    return plan;
+                });
+            };
+
+            const updateEditorPreWorkoutModel = (updater) => {
+                updateEditorDayPlan((plan) => {
+                    const current = plan.nutrition.preWorkout?.name
+                        ? parseMealForEditor(plan.nutrition.preWorkout.name)
+                        : { title: 'قبل التمرين', entries: [{ food: '', weight: '100g', protein: 20, carbs: 20 }] };
+                    const updated = updater(current);
+                    plan.nutrition.preWorkout = { name: buildMealNameFromEditor(updated) };
+                    return plan;
+                });
+            };
+
+            const handleEditorEnablePreWorkout = () => {
+                updateEditorDayPlan((plan) => {
+                    plan.nutrition.preWorkout = { name: 'قبل التمرين: عنصر 1 100g: 20g بروتين، 20g كارب' };
+                    return plan;
+                });
+            };
+
+            const handleEditorRemovePreWorkout = () => {
+                updateEditorDayPlan((plan) => {
+                    plan.nutrition.preWorkout = null;
+                    return plan;
+                });
+            };
+
+            const handleEditorPreWorkoutTitleChange = (title) => {
+                updateEditorPreWorkoutModel((model) => ({
+                    ...model,
+                    title
+                }));
+            };
+
+            const handleEditorPreWorkoutEntryChange = (entryIndex, field, value) => {
+                updateEditorPreWorkoutModel((model) => {
+                    const entries = [...model.entries];
+                    const currentEntry = entries[entryIndex] || { food: '', weight: '', protein: 0, carbs: 0 };
+                    const nextEntry = { ...currentEntry };
+                    if (field === 'protein' || field === 'carbs') {
+                        nextEntry[field] = toSafeInt(value, 0, 0, 1000);
+                    } else {
+                        nextEntry[field] = value;
+                    }
+                    entries[entryIndex] = nextEntry;
+                    return { ...model, entries };
+                });
+            };
+
+            const handleEditorAddPreWorkoutEntry = () => {
+                updateEditorPreWorkoutModel((model) => ({
+                    ...model,
+                    entries: [...model.entries, { food: 'مكون جديد', weight: '100g', protein: 20, carbs: 20 }]
+                }));
+            };
+
+            const handleEditorRemovePreWorkoutEntry = (entryIndex) => {
+                updateEditorPreWorkoutModel((model) => {
+                    const entries = model.entries.filter((_, idx) => idx !== entryIndex);
+                    return {
+                        ...model,
+                        entries: entries.length > 0 ? entries : [{ food: '', weight: '', protein: 0, carbs: 0 }]
+                    };
+                });
+            };
+
+            const handleEditorGoalChange = (field, value) => {
+                updateEditorDayPlan((plan) => {
+                    plan.nutrition.goals[field] = toSafeInt(value, 0, 0, 1000);
+                    return plan;
+                });
+            };
+
+            const handleEditorResetDay = () => {
+                if (confirm('إرجاع هذا اليوم للخطة الأصلية؟')) {
+                    setCustomPlans(prev => {
+                        const next = { ...prev };
+                        delete next[editorDay];
+                        return next;
+                    });
+                }
+            };
+            
+            const completedDays = Object.keys(daysData)
+                .filter(dayId => daysData[dayId]?.completed)
+                .map(Number);
+
+            const nextExercise = dayExercises.find(exercise => !completedExercises.includes(exercise.id));
+            const isGymTheme = themeMode === 'gym';
+            const editorPlan = useMemo(() => getDayPlan(editorDay), [getDayPlan, editorDay]);
+            
+            return (
+                <div className="page-shell app-frame">
+                    <header className="mb-1">
+                        <div className="card topbar-card app-topbar p-3 mb-4">
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5">
+                                    <div className="brand-logo" aria-label="Workout and Nutrition logo">
+                                        <span className="brand-logo-badge">WN</span>
+                                        <span className="brand-logo-text">WORKOUT NUTRITION</span>
+                                    </div>
+                                    <button
+                                        onClick={handleResetAllWeights}
+                                        className="secondary-btn icon-action-btn"
+                                        title="إعادة تعيين جميع الأوزان"
+                                        aria-label="إعادة تعيين جميع الأوزان"
+                                    >
+                                        <i className="fas fa-weight-scale"></i>
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentPage(currentPage === 'planner' ? 'tracker' : 'planner')}
+                                        className="secondary-btn icon-action-btn"
+                                        title={currentPage === 'planner' ? 'العودة للتتبع' : 'تعديل الجدول'}
+                                        aria-label={currentPage === 'planner' ? 'العودة للتتبع' : 'تعديل الجدول'}
+                                    >
+                                        <i className={`fas ${currentPage === 'planner' ? 'fa-list-check' : 'fa-sliders'}`}></i>
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentPage(currentPage === 'metrics' ? 'tracker' : 'metrics')}
+                                        className="secondary-btn icon-action-btn"
+                                        title={currentPage === 'metrics' ? 'العودة للتتبع' : 'قياس التقدم'}
+                                        aria-label={currentPage === 'metrics' ? 'العودة للتتبع' : 'قياس التقدم'}
+                                    >
+                                        <i className={`fas ${currentPage === 'metrics' ? 'fa-list-check' : 'fa-chart-line'}`}></i>
+                                    </button>
+                                    <button
+                                        onClick={() => setThemeMode(isGymTheme ? 'calm' : 'gym')}
+                                        className="secondary-btn icon-action-btn"
+                                        title={isGymTheme ? 'تفعيل الوضع الهادئ' : 'تفعيل وضع Gym Pro'}
+                                        aria-label={isGymTheme ? 'تفعيل الوضع الهادئ' : 'تفعيل وضع Gym Pro'}
+                                    >
+                                        <i className={`fas ${isGymTheme ? 'fa-sun' : 'fa-fire'}`}></i>
+                                    </button>
+                                    <button
+                                        onClick={handleResetWeek}
+                                        className="secondary-btn icon-action-btn"
+                                        title="إعادة تعيين الأسبوع"
+                                        aria-label="إعادة تعيين الأسبوع"
+                                    >
+                                        <i className="fas fa-redo-alt"></i>
+                                    </button>
+                                </div>
+                                <div></div>
+                            </div>
+                        </div>
+
+                        {currentPage === 'tracker' && (
+                            <>
+                                <div className="card day-hero-card p-4 sm:p-6 mb-4">
+                                    <div className="hero-center">
+                                        <span className="text-primary text-xs tracking-widest">{WEEK_DAYS[currentDay].name}</span>
+                                        <h2 className="day-title">يوم {WEEK_DAYS[currentDay].type}</h2>
+                                        <p className="day-subtitle">تمرين {WEEK_DAYS[currentDay].type} — {WEEK_DAYS[currentDay].time}</p>
+                                        <button
+                                            onClick={handleCompleteDay}
+                                            className="primary-btn px-6 py-3 text-sm sm:text-base"
+                                            disabled={currentDayData.completed}
+                                        >
+                                            {currentDayData.completed ? (
+                                                <>
+                                                    <i className="fas fa-check ml-2"></i>
+                                                    تم الإنجاز
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <i className="fas fa-flag-checkered ml-2"></i>
+                                                    إتمام اليوم
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <DayTabs
+                                    days={WEEK_DAYS}
+                                    currentDay={currentDay}
+                                    onDaySelect={setCurrentDay}
+                                    completedDays={completedDays}
+                                />
+                            </>
+                        )}
+                    </header>
+
+                    {currentPage === 'planner' ? (
+                        <div className="card planner-root planner-shell p-4 sm:p-5">
+                            <div className="planner-section-head planner-hero">
+                                <div>
+                                    <h3 className="planner-title">
+                                        <i className="fas fa-sliders"></i>
+                                        تعديل جدول الأيام
+                                    </h3>
+                                    <p className="planner-subtitle">خصص التمارين والوجبات لكل يوم، وسيتم حفظ التغييرات مباشرة.</p>
+                                </div>
+                                <button onClick={handleEditorResetDay} className="secondary-btn px-3 py-2 text-sm shrink-0">
+                                    <i className="fas fa-rotate-left ml-1"></i>
+                                    استعادة اليوم
+                                </button>
+                            </div>
+
+                            <div className="card planner-panel p-3">
+                                <p className="planner-subtitle mb-2">اختر اليوم للتعديل</p>
+                                <DayTabs
+                                    days={WEEK_DAYS}
+                                    currentDay={editorDay}
+                                    onDaySelect={setEditorDay}
+                                    completedDays={[]}
+                                />
+                            </div>
+
+                            <div className="card planner-panel p-4">
+                                <div className="planner-section-head">
+                                    <div>
+                                        <h4 className="planner-title">
+                                            <i className="fas fa-wand-magic-sparkles"></i>
+                                            مولد الخطة التلقائي
+                                        </h4>
+                                        <p className="planner-subtitle">Smart Questioner: أسئلة ذكية + Gemini لتوليد خطة متجددة للتمارين والوجبات.</p>
+                                    </div>
+                                    <button onClick={() => setAiDialogOpen(true)} className="primary-btn px-4 py-2 text-sm shrink-0">
+                                        <i className="fas fa-comments ml-1"></i>
+                                        فتح الأسئلة الذكية
+                                    </button>
+                                </div>
+                                {aiSummary && <p className="planner-subtitle mt-3">{aiSummary}</p>}
+
+                                {aiDraftPlan && (
+                                    <div className="card planner-panel p-3 mt-3">
+                                        <div className="planner-section-head">
+                                            <div>
+                                                <h5 className="planner-title"><i className="fas fa-eye"></i> معاينة الخطة قبل الاعتماد</h5>
+                                                <p className="planner-subtitle">راجع الاقتراح أولًا، ثم اعتمده في الجدول.</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button className="secondary-btn px-3 py-2 text-sm" onClick={() => setAiDraftPlan(null)}>
+                                                    تجاهل
+                                                </button>
+                                                <button className="primary-btn px-3 py-2 text-sm" onClick={handleApplyAiDraft}>
+                                                    اعتماد الخطة
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {WEEK_DAYS.map((day) => {
+                                                const draft = aiDraftPlan[day.id];
+                                                if (!draft) return null;
+                                                const exerciseCount = (draft.exercises || []).length;
+                                                const mealCount = (draft.nutrition?.meals || []).length + (draft.nutrition?.preWorkout ? 1 : 0);
+                                                return (
+                                                    <div key={`draft-${day.id}`} className="planner-row flex items-center justify-between gap-2">
+                                                        <span className="text-sm">{day.name} - {day.type}</span>
+                                                        <span className="badge">{exerciseCount} تمارين</span>
+                                                        <span className="badge">{mealCount} وجبات</span>
+                                                        <span className="badge" dir="ltr">P {draft.nutrition?.goals?.protein || 0}g / C {draft.nutrition?.goals?.carbs || 0}g</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="card planner-panel p-4">
+                                <div className="planner-section-head">
+                                    <div>
+                                        <h4 className="planner-title">
+                                            <i className="fas fa-dumbbell"></i>
+                                            تمارين اليوم
+                                        </h4>
+                                        <p className="planner-subtitle">اختر التمارين من قائمة أساسية مناسبة للمبتدئين والمتوسطين، ثم عدّل المجموعات والتكرارات.</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-3">
+                                    <div className="hidden md:grid md:grid-cols-[1fr_90px_110px_auto] gap-2 items-center px-2">
+                                        <span className="planner-grid-head">اسم التمرين</span>
+                                        <span className="planner-grid-head">المجموعات</span>
+                                        <span className="planner-grid-head">التكرارات</span>
+                                        <span></span>
+                                    </div>
+
+                                    {editorPlan.exercises.map((exercise, index) => (
+                                        <div key={exercise.id} className="planner-row grid grid-cols-1 md:grid-cols-[1fr_90px_110px_auto] gap-2 items-center">
+                                            <div>
+                                                <label className="planner-grid-head md:hidden block mb-1">اسم التمرين</label>
+                                                <select
+                                                    className="input-surface px-3 py-2 text-sm w-full"
+                                                    value={exercise.name}
+                                                    onChange={(e) => handleEditorExerciseNameSelect(index, e.target.value)}
+                                                >
+                                                    {!exerciseLibraryMap.has(exercise.name) && (
+                                                        <option value={exercise.name}>{exercise.name}</option>
+                                                    )}
+                                                    {groupedExerciseOptions.map((group) => (
+                                                        <optgroup key={group.category} label={group.category}>
+                                                            {group.items.map((option) => (
+                                                                <option key={option.name} value={option.name}>{option.name}</option>
+                                                            ))}
+                                                        </optgroup>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="planner-grid-head md:hidden block mb-1">المجموعات</label>
+                                                    <input
+                                                        type="number"
+                                                        className="input-surface px-3 py-2 text-sm"
+                                                        value={exercise.sets}
+                                                        onChange={(e) => handleEditorExerciseChange(index, 'sets', toSafeInt(e.target.value, 3, 0, 20))}
+                                                        placeholder="المجموعات"
+                                                    />
+                                            </div>
+                                            <div>
+                                                <label className="planner-grid-head md:hidden block mb-1">التكرارات</label>
+                                                <input
+                                                    className="input-surface px-3 py-2 text-sm"
+                                                    value={exercise.reps}
+                                                    onChange={(e) => handleEditorExerciseChange(index, 'reps', e.target.value)}
+                                                    placeholder="التكرارات"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="planner-grid-head md:hidden block mb-1">حذف</label>
+                                                <button className="secondary-btn icon-action-btn" onClick={() => handleEditorRemoveExercise(index)}>
+                                                    <i className="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button onClick={handleEditorAddExercise} className="primary-btn px-4 py-2 text-sm mt-3">
+                                    <i className="fas fa-plus ml-1"></i>
+                                    إضافة تمرين
+                                </button>
+                            </div>
+
+                            <div className="card planner-panel p-4">
+                                <div className="planner-section-head">
+                                    <div>
+                                        <h4 className="planner-title">
+                                            <i className="fas fa-bullseye"></i>
+                                            أهداف تغذية اليوم
+                                        </h4>
+                                        <p className="planner-subtitle">حدد الهدف اليومي للبروتين والكارب.</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="muted-text text-xs block mb-1">هدف البروتين (g)</label>
+                                        <input
+                                            type="number"
+                                            className="input-surface px-3 py-2 text-sm w-full"
+                                            value={editorPlan.nutrition.goals.protein}
+                                            onChange={(e) => handleEditorGoalChange('protein', e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="muted-text text-xs block mb-1">هدف الكارب (g)</label>
+                                        <input
+                                            type="number"
+                                            className="input-surface px-3 py-2 text-sm w-full"
+                                            value={editorPlan.nutrition.goals.carbs}
+                                            onChange={(e) => handleEditorGoalChange('carbs', e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="card planner-panel p-4">
+                                <div className="planner-section-head">
+                                    <div>
+                                        <h4 className="planner-title">
+                                            <i className="fas fa-bolt"></i>
+                                            قبل التمرين (اختياري)
+                                        </h4>
+                                        <p className="planner-subtitle">نفس بنية الوجبات: مكونات + ماكروز لكل مكوّن.</p>
+                                    </div>
+                                    {editorPlan.nutrition.preWorkout ? (
+                                        <button className="secondary-btn px-3 py-1.5 text-xs" onClick={handleEditorRemovePreWorkout}>
+                                            <i className="fas fa-trash ml-1"></i>
+                                            حذف قبل التمرين
+                                        </button>
+                                    ) : (
+                                        <button className="primary-btn px-3 py-1.5 text-xs" onClick={handleEditorEnablePreWorkout}>
+                                            <i className="fas fa-plus ml-1"></i>
+                                            إضافة قبل التمرين
+                                        </button>
+                                    )}
+                                </div>
+
+                                {editorPlan.nutrition.preWorkout && (() => {
+                                    const preModel = parseMealForEditor(editorPlan.nutrition.preWorkout.name);
+                                    return (
+                                        <div className="card planner-panel p-3">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <input
+                                                    className="input-surface px-3 py-2 text-sm w-full"
+                                                    value={preModel.title}
+                                                    onChange={(e) => handleEditorPreWorkoutTitleChange(e.target.value)}
+                                                    placeholder="اسم الوجبة"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <div className="hidden sm:grid sm:grid-cols-[1fr_110px_90px_90px_auto] gap-2 items-center px-1">
+                                                    <span className="planner-grid-head">المكوّن</span>
+                                                    <span className="planner-grid-head">الوزن</span>
+                                                    <span className="planner-grid-head">البروتين</span>
+                                                    <span className="planner-grid-head">الكارب</span>
+                                                    <span></span>
+                                                </div>
+
+                                                {preModel.entries.map((entry, entryIndex) => (
+                                                    <div key={`pre-entry-${entryIndex}`} className="planner-row grid grid-cols-1 sm:grid-cols-[1fr_110px_90px_90px_auto] gap-2 items-center">
+                                                        <div>
+                                                            <label className="planner-grid-head sm:hidden block mb-1">المكوّن</label>
+                                                            <input
+                                                                className="input-surface px-3 py-2 text-sm"
+                                                                value={entry.food}
+                                                                onChange={(e) => handleEditorPreWorkoutEntryChange(entryIndex, 'food', e.target.value)}
+                                                                placeholder="المكون (مثال: موز)"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="planner-grid-head sm:hidden block mb-1">الوزن</label>
+                                                            <input
+                                                                className="input-surface px-3 py-2 text-sm"
+                                                                value={entry.weight}
+                                                                onChange={(e) => handleEditorPreWorkoutEntryChange(entryIndex, 'weight', e.target.value)}
+                                                                placeholder="الوزن (مثال: 120g)"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="planner-grid-head sm:hidden block mb-1">البروتين</label>
+                                                            <input
+                                                                type="number"
+                                                                className="input-surface px-3 py-2 text-sm"
+                                                                value={entry.protein}
+                                                                onChange={(e) => handleEditorPreWorkoutEntryChange(entryIndex, 'protein', e.target.value)}
+                                                                placeholder="بروتين"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="planner-grid-head sm:hidden block mb-1">الكارب</label>
+                                                            <input
+                                                                type="number"
+                                                                className="input-surface px-3 py-2 text-sm"
+                                                                value={entry.carbs}
+                                                                onChange={(e) => handleEditorPreWorkoutEntryChange(entryIndex, 'carbs', e.target.value)}
+                                                                placeholder="كارب"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="planner-grid-head sm:hidden block mb-1">حذف</label>
+                                                            <button className="secondary-btn icon-action-btn" onClick={() => handleEditorRemovePreWorkoutEntry(entryIndex)}>
+                                                                <i className="fas fa-minus"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            <button className="secondary-btn px-3 py-2 text-sm mt-2" onClick={handleEditorAddPreWorkoutEntry}>
+                                                <i className="fas fa-plus ml-1"></i>
+                                                إضافة مكون
+                                            </button>
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+
+                            <div className="card planner-panel p-4">
+                                <div className="planner-section-head">
+                                    <div>
+                                        <h4 className="planner-title">
+                                            <i className="fas fa-utensils"></i>
+                                            الوجبات
+                                        </h4>
+                                        <p className="planner-subtitle">أضف أي عدد من الوجبات، وكل وجبة تحتوي عدة مكونات.</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {editorPlan.nutrition.meals.map((meal, index) => (
+                                        (() => {
+                                            const parsedMeal = parseMealForEditor(meal.name);
+                                            return (
+                                                <div key={meal.id} className="card planner-panel p-3">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <input
+                                                            className="input-surface px-3 py-2 text-sm w-full"
+                                                            value={parsedMeal.title}
+                                                            onChange={(e) => handleEditorMealTitleChange(index, e.target.value)}
+                                                            placeholder="اسم الوجبة"
+                                                        />
+                                                        <button className="secondary-btn icon-action-btn" onClick={() => handleEditorRemoveMeal(index)}>
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <div className="hidden sm:grid sm:grid-cols-[1fr_110px_90px_90px_auto] gap-2 items-center px-1">
+                                                            <span className="planner-grid-head">المكوّن</span>
+                                                            <span className="planner-grid-head">الوزن</span>
+                                                            <span className="planner-grid-head">البروتين</span>
+                                                            <span className="planner-grid-head">الكارب</span>
+                                                            <span></span>
+                                                        </div>
+
+                                                        {parsedMeal.entries.map((entry, entryIndex) => (
+                                                            <div key={`${meal.id}-entry-${entryIndex}`} className="planner-row grid grid-cols-1 sm:grid-cols-[1fr_110px_90px_90px_auto] gap-2 items-center">
+                                                                <div>
+                                                                    <label className="planner-grid-head sm:hidden block mb-1">المكوّن</label>
+                                                                    <input
+                                                                        className="input-surface px-3 py-2 text-sm"
+                                                                        value={entry.food}
+                                                                        onChange={(e) => handleEditorMealEntryChange(index, entryIndex, 'food', e.target.value)}
+                                                                        placeholder="المكون (مثال: دجاج)"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="planner-grid-head sm:hidden block mb-1">الوزن</label>
+                                                                    <input
+                                                                        className="input-surface px-3 py-2 text-sm"
+                                                                        value={entry.weight}
+                                                                        onChange={(e) => handleEditorMealEntryChange(index, entryIndex, 'weight', e.target.value)}
+                                                                        placeholder="الوزن (مثال: 200g)"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="planner-grid-head sm:hidden block mb-1">البروتين</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        className="input-surface px-3 py-2 text-sm"
+                                                                        value={entry.protein}
+                                                                        onChange={(e) => handleEditorMealEntryChange(index, entryIndex, 'protein', e.target.value)}
+                                                                        placeholder="بروتين"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="planner-grid-head sm:hidden block mb-1">الكارب</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        className="input-surface px-3 py-2 text-sm"
+                                                                        value={entry.carbs}
+                                                                        onChange={(e) => handleEditorMealEntryChange(index, entryIndex, 'carbs', e.target.value)}
+                                                                        placeholder="كارب"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="planner-grid-head sm:hidden block mb-1">حذف</label>
+                                                                    <button className="secondary-btn icon-action-btn" onClick={() => handleEditorRemoveMealEntry(index, entryIndex)}>
+                                                                        <i className="fas fa-minus"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    <button className="secondary-btn px-3 py-2 text-sm mt-2" onClick={() => handleEditorAddMealEntry(index)}>
+                                                        <i className="fas fa-plus ml-1"></i>
+                                                        إضافة مكون
+                                                    </button>
+                                                </div>
+                                            );
+                                        })()
+                                    ))}
+                                </div>
+
+                                <button onClick={handleEditorAddMeal} className="primary-btn px-4 py-2 text-sm mt-3">
+                                    <i className="fas fa-plus ml-1"></i>
+                                    إضافة وجبة
+                                </button>
+                            </div>
+
+                            <p className="muted-text text-xs">
+                                ملاحظة: التعديلات تُحفظ مباشرة، ويمكنك الرجوع للتتبع عبر زر الإعدادات بالأعلى.
+                            </p>
+                        </div>
+                    ) : currentPage === 'metrics' ? (
+                    <ProgressMetricsPage
+                        entries={metricsEntries}
+                        form={metricsForm}
+                        onFormChange={updateMetricsForm}
+                        onAdd={handleAddMetricsEntry}
+                        onDelete={handleDeleteMetricsEntry}
+                        themeMode={themeMode}
+                    />
+                    ) : (
+                    <>
+                    <div className="card p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <h3 className="font-bold">مهمة اليوم</h3>
+                            <span className="badge">{progress}% مكتمل</span>
+                        </div>
+                        <p className="muted-text text-sm mb-3">
+                            {nextExercise ? `التمرين التالي: ${nextExercise.name}` : 'أكملت تمارين اليوم، ممتاز!'}
+                        </p>
+                        <div className="hero-metrics">
+                            <div className="metric-chip">
+                                <strong>{completedExercises.length}/{dayExercises.length}</strong>
+                                <span>تمارين</span>
+                            </div>
+                            <div className="metric-chip">
+                                <strong>{completedMeals.length + (completedPreWorkout ? 1 : 0)}/{currentDayMeals.length + (currentPreWorkout ? 1 : 0)}</strong>
+                                <span>وجبات</span>
+                            </div>
+                            <div className="metric-chip">
+                                <strong>{currentDayData.energyLevel}/10</strong>
+                                <span>الطاقة</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <ProgressBar progress={progress} />
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
+                        <div>
+                            <h2 className="section-title">التمارين</h2>
+                            {dayExercises.length > 0 ? (
+                                dayExercises.map(exercise => (
+                                    <ExerciseItem
+                                        key={exercise.id}
+                                        exercise={exercise}
+                                        isCompleted={completedExercises.includes(exercise.id)}
+                                        currentWeight={weightsData[exercise.id]?.current || ''}
+                                        weightHistory={weightsData[exercise.id]?.history || []}
+                                        onToggle={handleExerciseToggle}
+                                        onWeightChange={handleWeightChange}
+                                    />
+                                ))
+                            ) : (
+                                <div className="card p-6 text-center muted-text">
+                                    <i className="fas fa-bed text-3xl mb-3"></i>
+                                    <p>يوم راحة - لا توجد تمارين</p>
+                                </div>
+                            )}
+
+                            <h2 className="section-title mt-7">التغذية</h2>
+                            {currentPreWorkout && (
+                                <NutritionItem
+                                    meal={{ id: 'pre-workout', name: currentPreWorkout.name }}
+                                    isCompleted={completedPreWorkout}
+                                    onToggle={handlePreWorkoutToggle}
+                                />
+                            )}
+
+                            {currentDayMeals.map(meal => (
+                                <NutritionItem
+                                    key={meal.id}
+                                    meal={meal}
+                                    isCompleted={completedMeals.includes(meal.id)}
+                                    onToggle={handleMealToggle}
+                                />
+                            ))}
+                        </div>
+
+                        <div>
+                            <NutritionProgress
+                                consumedProtein={consumedProtein}
+                                consumedCarbs={consumedCarbs}
+                                goals={currentGoals}
+                            />
+
+                            <DailyCheckIn
+                                energyLevel={currentDayData.energyLevel}
+                                ateAfterWorkout={currentDayData.ateAfterWorkout}
+                                reachedProteinGoal={currentDayData.reachedProteinGoal}
+                                notes={currentDayData.notes}
+                                onUpdate={handleDailyUpdate}
+                            />
+                        </div>
+                    </div>
+
+                    <AnalyticsDashboard daysData={daysData} themeMode={themeMode} />
+                    </>
+                    )}
+
+                    {currentPage === 'planner' && aiDialogOpen && (
+                        <div className="ai-dialog-backdrop" onClick={() => setAiDialogOpen(false)}>
+                            <div className="ai-dialog" onClick={(e) => e.stopPropagation()}>
+                                <div className="planner-section-head mb-3">
+                                    <div>
+                                        <h4 className="planner-title"><i className="fas fa-comments"></i> Smart Questioner</h4>
+                                        <p className="planner-subtitle">أجب على الأسئلة، ثم سنولد خطة ونعرضها لك للمراجعة قبل الاعتماد.</p>
+                                    </div>
+                                    <button className="secondary-btn px-3 py-2 text-sm" onClick={() => setAiDialogOpen(false)}>
+                                        إغلاق
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div>
+                                        <label className="planner-grid-head block mb-1">ما هو جنسك؟</label>
+                                        <select className="input-surface px-3 py-2 text-sm w-full" value={aiForm.sex} onChange={(e) => updateAiForm('sex', e.target.value)}>
+                                            <option value="male">ذكر</option>
+                                            <option value="female">أنثى</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="planner-grid-head block mb-1">وزنك الحالي (kg)</label>
+                                        <input type="number" className="input-surface px-3 py-2 text-sm w-full" value={aiForm.weight} onChange={(e) => updateAiForm('weight', e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <label className="planner-grid-head block mb-1">طولك (cm)</label>
+                                        <input type="number" className="input-surface px-3 py-2 text-sm w-full" value={aiForm.height} onChange={(e) => updateAiForm('height', e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <label className="planner-grid-head block mb-1">نسبة الدهون (%)</label>
+                                        <input type="number" className="input-surface px-3 py-2 text-sm w-full" value={aiForm.bodyFat} onChange={(e) => updateAiForm('bodyFat', e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <label className="planner-grid-head block mb-1">ما هو هدفك؟</label>
+                                        <select className="input-surface px-3 py-2 text-sm w-full" value={aiForm.goal} onChange={(e) => updateAiForm('goal', e.target.value)}>
+                                            <option value="muscle_gain">بناء عضل</option>
+                                            <option value="fat_loss">خسارة دهون</option>
+                                            <option value="maintain">ثبات</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="planner-grid-head block mb-1">مستواك التدريبي</label>
+                                        <select className="input-surface px-3 py-2 text-sm w-full" value={aiForm.experience} onChange={(e) => updateAiForm('experience', e.target.value)}>
+                                            <option value="beginner">مبتدئ</option>
+                                            <option value="intermediate">متوسط</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="planner-grid-head block mb-1">كم يوم تتمرن بالأسبوع؟</label>
+                                        <input type="number" min="3" max="7" className="input-surface px-3 py-2 text-sm w-full" value={aiForm.sessionsPerWeek} onChange={(e) => updateAiForm('sessionsPerWeek', e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <label className="planner-grid-head block mb-1">نمط التغذية المفضل</label>
+                                        <select className="input-surface px-3 py-2 text-sm w-full" value={aiForm.foodStyle} onChange={(e) => updateAiForm('foodStyle', e.target.value)}>
+                                            <option value="balanced">Balanced</option>
+                                            <option value="high_protein">High Protein</option>
+                                            <option value="low_carb">Low Carb</option>
+                                        </select>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <label className="planner-grid-head block mb-1">أطعمة لا تريدها؟ (افصل بفاصلة)</label>
+                                        <input className="input-surface px-3 py-2 text-sm w-full" value={aiForm.excludedFoods} onChange={(e) => updateAiForm('excludedFoods', e.target.value)} placeholder="مثال: تونة, لحم" />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-2 mt-3">
+                                    <button className="secondary-btn px-3 py-2 text-sm" onClick={() => setAiDialogOpen(false)}>
+                                        إلغاء
+                                    </button>
+                                    <button className="primary-btn px-4 py-2 text-sm" disabled={aiIsGenerating} onClick={handleGenerateAiPlan}>
+                                        <i className="fas fa-sparkles ml-1"></i>
+                                        {aiIsGenerating ? 'جاري التوليد...' : 'توليد ومعاينة الخطة'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
