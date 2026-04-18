@@ -178,11 +178,40 @@
         }
 
         .completed-surface {
+            position: relative;
+            overflow: hidden;
             background:
-                linear-gradient(0deg, rgba(242, 202, 80, 0.16), rgba(242, 202, 80, 0.16)),
+                linear-gradient(0deg, rgba(242, 202, 80, 0.2), rgba(242, 202, 80, 0.2)),
                 linear-gradient(165deg, var(--card-bg-start), var(--card-bg-end));
-            box-shadow: var(--shadow-soft);
+            border-color: rgba(242, 202, 80, 0.55) !important;
+            box-shadow:
+                0 0 0 1px rgba(242, 202, 80, 0.3) inset,
+                0 0 22px rgba(242, 202, 80, 0.16) inset,
+                0 0 18px rgba(242, 202, 80, 0.24),
+                var(--shadow-soft);
             transform: translateY(-1px);
+            transition: box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .completed-surface::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -120%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(115deg, transparent 0%, rgba(255, 235, 165, 0.38) 48%, transparent 100%);
+            animation: completedGoldSweep 1.35s ease;
+            pointer-events: none;
+        }
+
+        @keyframes completedGoldSweep {
+            0% {
+                left: -120%;
+            }
+            100% {
+                left: 140%;
+            }
         }
 
         .exercise-card,
@@ -195,9 +224,14 @@
 
         body.theme-gym .completed-surface {
             background:
-                linear-gradient(0deg, rgba(96, 159, 255, 0.18), rgba(96, 159, 255, 0.18)),
+                linear-gradient(0deg, rgba(242, 202, 80, 0.2), rgba(242, 202, 80, 0.2)),
                 linear-gradient(165deg, var(--card-bg-start), var(--card-bg-end));
-            box-shadow: var(--shadow-soft);
+            border-color: rgba(242, 202, 80, 0.48) !important;
+            box-shadow:
+                0 0 0 1px rgba(242, 202, 80, 0.24) inset,
+                0 0 18px rgba(242, 202, 80, 0.13) inset,
+                0 0 16px rgba(242, 202, 80, 0.2),
+                var(--shadow-soft);
         }
 
         .text-primary {
