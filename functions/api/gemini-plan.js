@@ -72,8 +72,8 @@ async function fetchWithTimeout(url, options, timeoutMs = 20000) {
 export async function onRequestPost(context) {
   const { request, env } = context
 
-  if (!env.DEEPSEEK_API_KEY) {
-    return jsonResponse({ error: 'Missing DEEPSEEK_API_KEY in environment variables.' }, 500)
+  if (!env.GEMINI_API_KEY) {
+    return jsonResponse({ error: 'Missing GEMINI_API_KEY in environment variables.' }, 500)
   }
 
   let body
@@ -121,54 +121,50 @@ Rules:
 6) Keep response concise and minimal tokens.
 `
 
-  let deepseekResp
+  let geminiResp
   try {
-    deepseekResp = await fetchWithTimeout('https://api.deepseek.com/v1/chat/completions', {
+    geminiResp = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.DEEPSEEK_API_KEY}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a fitness programming assistant. Return valid JSON only.'
-          },
+        contents: [
           {
             role: 'user',
-            content: prompt
-          }
+            parts: [{ text: prompt }]
+          },
         ],
-        temperature: 0.5,
-        top_p: 0.9,
-        max_tokens: 1200,
-        response_format: { type: 'json_object' }
+        generationConfig: {
+          temperature: 0.4,
+          topP: 0.9,
+          maxOutputTokens: 1200,
+          responseMimeType: 'text/plain'
+        }
       })
     }, 45000)
   } catch (error) {
     if (error?.name === 'AbortError') {
-      return jsonResponse({ error: 'DeepSeek request timeout after 45s.' }, 504)
+      return jsonResponse({ error: 'Gemini request timeout after 45s.' }, 504)
     }
-    return jsonResponse({ error: 'DeepSeek request failed before response.', details: String(error?.message || error) }, 502)
+    return jsonResponse({ error: 'Gemini request failed before response.', details: String(error?.message || error) }, 502)
   }
 
-  if (!deepseekResp.ok) {
-    const text = await deepseekResp.text()
-    return jsonResponse({ error: 'DeepSeek API request failed.', details: text }, 502)
+  if (!geminiResp.ok) {
+    const text = await geminiResp.text()
+    return jsonResponse({ error: 'Gemini API request failed.', details: text }, 502)
   }
 
-  const deepseekData = await deepseekResp.json()
-  const text = deepseekData?.choices?.[0]?.message?.content || ''
+  const geminiData = await geminiResp.json()
+  const text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || ''
   const parsed = extractJson(text)
 
   if (!parsed || !parsed.generated) {
-    return jsonResponse({ error: 'DeepSeek response was not valid JSON.', raw: text }, 502)
+    return jsonResponse({ error: 'Gemini response was not valid JSON.', raw: text }, 502)
   }
 
   return jsonResponse({
-    summary: parsed.summary || 'تم إنشاء الخطة عبر DeepSeek.',
+    summary: parsed.summary || 'تم إنشاء الخطة عبر Gemini.',
     generated: normalizeGenerated(parsed.generated)
   })
 }

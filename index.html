@@ -2401,7 +2401,7 @@
 
                     const reason = error?.name === 'AbortError'
                         ? 'انتهت مهلة الطلب. حاول مرة أخرى أو قلل التفاصيل.'
-                        : 'تعذر توليد الخطة من Gemini/DeepSeek. تأكد من إعداد endpoint ومفتاح API ثم حاول مرة أخرى.';
+                        : 'تعذر توليد الخطة من Gemini. تأكد من إعداد endpoint ومفتاح API ثم حاول مرة أخرى.';
                     const shortDetails = details ? `\n\nتفاصيل الخطأ: ${details.slice(0, 220)}` : '';
                     setAiSummary(`${reason}${shortDetails}`);
                     alert(`${reason}${shortDetails}`);
