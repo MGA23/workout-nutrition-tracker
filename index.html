@@ -2366,8 +2366,8 @@
                     }
                     const payload = await response.json();
                     const generated = normalizeGeneratedPlan(payload?.generated || payload);
-                    const summary = payload?.summary || 'تم إنشاء الخطة عبر Gemini.';
-                    return { generated, summary, source: 'gemini' };
+                    const summary = payload?.summary || 'تم إنشاء الخطة عبر Groq.';
+                    return { generated, summary, source: 'groq' };
                 } catch (error) {
                     throw error;
                 }
@@ -2401,7 +2401,7 @@
 
                     const reason = error?.name === 'AbortError'
                         ? 'انتهت مهلة الطلب. حاول مرة أخرى أو قلل التفاصيل.'
-                        : 'تعذر توليد الخطة من Gemini. تأكد من إعداد endpoint ومفتاح API ثم حاول مرة أخرى.';
+                        : 'تعذر توليد الخطة من Groq. تأكد من إعداد endpoint ومفتاح API ثم حاول مرة أخرى.';
                     const shortDetails = details ? `\n\nتفاصيل الخطأ: ${details.slice(0, 220)}` : '';
                     setAiSummary(`${reason}${shortDetails}`);
                     alert(`${reason}${shortDetails}`);
@@ -3021,7 +3021,7 @@
                                             <i className="fas fa-wand-magic-sparkles"></i>
                                             مولد الخطة التلقائي
                                         </h4>
-                                        <p className="planner-subtitle">Smart Questioner: أسئلة ذكية + Gemini لتوليد خطة متجددة للتمارين والوجبات.</p>
+                                        <p className="planner-subtitle">Smart Questioner: أسئلة ذكية + Groq لتوليد خطة متجددة للتمارين والوجبات.</p>
                                     </div>
                                     <button onClick={() => setAiDialogOpen(true)} className="primary-btn px-4 py-2 text-sm shrink-0">
                                         <i className="fas fa-comments ml-1"></i>

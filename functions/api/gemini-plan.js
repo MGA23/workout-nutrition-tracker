@@ -72,8 +72,8 @@ async function fetchWithTimeout(url, options, timeoutMs = 20000) {
 export async function onRequestPost(context) {
   const { request, env } = context
 
-  if (!env.GEMINI_API_KEY) {
-    return jsonResponse({ error: 'Missing GEMINI_API_KEY in environment variables.' }, 500)
+  if (!env.GROQ_API_KEY) {
+    return jsonResponse({ error: 'Missing GROQ_API_KEY in environment variables.' }, 500)
   }
 
   let body
@@ -122,72 +122,67 @@ Rules:
 `
 
   const modelCandidates = [
-    'gemini-2.0-flash',
-    'gemini-1.5-flash-latest',
-    'gemini-1.5-flash-8b',
-    'gemini-1.5-flash'
+    'llama-3.1-8b-instant',
+    'llama-3.3-70b-versatile'
   ]
 
-  let geminiResp = null
+  let providerResp = null
   let lastErrorText = ''
 
   for (const model of modelCandidates) {
     try {
-      const resp = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`, {
+      const resp = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${env.GROQ_API_KEY}`
         },
         body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: prompt }]
-            },
+          model,
+          messages: [
+            { role: 'system', content: 'You are a fitness programming assistant. Return valid JSON only.' },
+            { role: 'user', content: prompt }
           ],
-          generationConfig: {
-            temperature: 0.4,
-            topP: 0.9,
-            maxOutputTokens: 1200,
-            responseMimeType: 'text/plain'
-          }
+          temperature: 0.3,
+          top_p: 0.9,
+          max_tokens: 1000,
+          response_format: { type: 'json_object' }
         })
-      }, 45000)
+      }, 30000)
 
       if (resp.ok) {
-        geminiResp = resp
+        providerResp = resp
         break
       }
 
       const text = await resp.text()
       lastErrorText = text
 
-      // If model is not found, try the next candidate model.
-      if (resp.status === 404) continue
+      if (resp.status === 404 || resp.status === 429) continue
 
-      return jsonResponse({ error: `Gemini API request failed on model ${model}.`, details: text }, 502)
+      return jsonResponse({ error: `Groq API request failed on model ${model}.`, details: text }, 502)
     } catch (error) {
       if (error?.name === 'AbortError') {
-        return jsonResponse({ error: 'Gemini request timeout after 45s.' }, 504)
+        return jsonResponse({ error: 'Groq request timeout after 30s.' }, 504)
       }
-      return jsonResponse({ error: 'Gemini request failed before response.', details: String(error?.message || error) }, 502)
+      return jsonResponse({ error: 'Groq request failed before response.', details: String(error?.message || error) }, 502)
     }
   }
 
-  if (!geminiResp) {
-    return jsonResponse({ error: 'No available Gemini model worked with this key/API version.', details: lastErrorText }, 502)
+  if (!providerResp) {
+    return jsonResponse({ error: 'No available Groq model worked with this key/limits.', details: lastErrorText }, 502)
   }
 
-  const geminiData = await geminiResp.json()
-  const text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  const providerData = await providerResp.json()
+  const text = providerData?.choices?.[0]?.message?.content || ''
   const parsed = extractJson(text)
 
   if (!parsed || !parsed.generated) {
-    return jsonResponse({ error: 'Gemini response was not valid JSON.', raw: text }, 502)
+    return jsonResponse({ error: 'Groq response was not valid JSON.', raw: text }, 502)
   }
 
   return jsonResponse({
-    summary: parsed.summary || 'تم إنشاء الخطة عبر Gemini.',
+    summary: parsed.summary || 'تم إنشاء الخطة عبر Groq.',
     generated: normalizeGenerated(parsed.generated)
   })
 }
