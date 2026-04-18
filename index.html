@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101010">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="متتبع التمرين والتغذية">
+    <link rel="manifest" href="/manifest.webmanifest">
     <title>متتبع التمرين والتغذية</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -3565,6 +3571,108 @@
         
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
+    </script>
+    <script>
+        (function () {
+            if (!('serviceWorker' in navigator)) return;
+
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js').catch(function () {
+                    // Silent fail for unsupported/private browsing conditions.
+                });
+            });
+
+            var deferredPrompt = null;
+            var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            if (isStandalone) return;
+
+            function removeBanner() {
+                var existing = document.getElementById('pwaInstallBanner');
+                if (existing) existing.remove();
+            }
+
+            function showBanner() {
+                if (document.getElementById('pwaInstallBanner')) return;
+
+                var banner = document.createElement('div');
+                banner.id = 'pwaInstallBanner';
+                banner.setAttribute('dir', 'rtl');
+                banner.style.position = 'fixed';
+                banner.style.left = '12px';
+                banner.style.right = '12px';
+                banner.style.bottom = '12px';
+                banner.style.zIndex = '1000';
+                banner.style.background = 'rgba(16,16,16,0.95)';
+                banner.style.border = '1px solid rgba(242,202,80,0.35)';
+                banner.style.borderRadius = '14px';
+                banner.style.padding = '12px';
+                banner.style.color = '#e9e3d7';
+                banner.style.boxShadow = '0 10px 24px rgba(0,0,0,0.35)';
+                banner.style.display = 'flex';
+                banner.style.alignItems = 'center';
+                banner.style.justifyContent = 'space-between';
+                banner.style.gap = '10px';
+
+                var text = document.createElement('div');
+                text.textContent = 'ثبّت التطبيق على جهازك للوصول السريع والعمل كتطبيق مستقل.';
+                text.style.fontSize = '14px';
+                text.style.lineHeight = '1.35';
+
+                var actions = document.createElement('div');
+                actions.style.display = 'flex';
+                actions.style.gap = '8px';
+
+                var closeBtn = document.createElement('button');
+                closeBtn.textContent = 'لاحقًا';
+                closeBtn.style.border = '1px solid rgba(242,202,80,0.3)';
+                closeBtn.style.background = 'transparent';
+                closeBtn.style.color = '#f2ca50';
+                closeBtn.style.borderRadius = '10px';
+                closeBtn.style.padding = '8px 10px';
+                closeBtn.style.cursor = 'pointer';
+                closeBtn.onclick = function () {
+                    removeBanner();
+                };
+
+                var installBtn = document.createElement('button');
+                installBtn.textContent = 'تثبيت';
+                installBtn.style.border = 'none';
+                installBtn.style.background = 'linear-gradient(135deg, #f2ca50, #d4af37)';
+                installBtn.style.color = '#241a00';
+                installBtn.style.borderRadius = '10px';
+                installBtn.style.padding = '8px 12px';
+                installBtn.style.fontWeight = '700';
+                installBtn.style.cursor = 'pointer';
+                installBtn.onclick = async function () {
+                    if (!deferredPrompt) return;
+                    deferredPrompt.prompt();
+                    try {
+                        await deferredPrompt.userChoice;
+                    } catch (_) {
+                        // no-op
+                    }
+                    deferredPrompt = null;
+                    removeBanner();
+                };
+
+                actions.appendChild(closeBtn);
+                actions.appendChild(installBtn);
+                banner.appendChild(text);
+                banner.appendChild(actions);
+                document.body.appendChild(banner);
+            }
+
+            window.addEventListener('beforeinstallprompt', function (event) {
+                event.preventDefault();
+                deferredPrompt = event;
+                showBanner();
+            });
+
+            window.addEventListener('appinstalled', function () {
+                deferredPrompt = null;
+                removeBanner();
+            });
+        })();
     </script>
 </body>
 </html>
