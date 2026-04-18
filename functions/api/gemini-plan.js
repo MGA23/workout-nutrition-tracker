@@ -87,7 +87,7 @@ export async function onRequestPost(context) {
   const weekDays = Array.isArray(body?.weekDays) ? body.weekDays : []
   const exercisePool = Array.isArray(body?.exercisePool) ? body.exercisePool : []
 
-  const prompt = `Generate a realistic 7-day gym and nutrition plan in Arabic JSON only.
+  const prompt = `Generate a compact 7-day gym+nutrition plan in Arabic, valid JSON only.
 
 Inputs:
 profile=${JSON.stringify(profile)}
@@ -118,6 +118,7 @@ Rules:
 3) Keep plan practical for beginner/intermediate.
 4) Respect excluded foods if present.
 5) Include all days 0..6.
+6) Keep response concise and minimal tokens.
 `
 
   let deepseekResp
@@ -142,13 +143,13 @@ Rules:
         ],
         temperature: 0.5,
         top_p: 0.9,
-        max_tokens: 1800,
+        max_tokens: 1200,
         response_format: { type: 'json_object' }
       })
-    }, 20000)
+    }, 45000)
   } catch (error) {
     if (error?.name === 'AbortError') {
-      return jsonResponse({ error: 'DeepSeek request timeout after 20s.' }, 504)
+      return jsonResponse({ error: 'DeepSeek request timeout after 45s.' }, 504)
     }
     return jsonResponse({ error: 'DeepSeek request failed before response.', details: String(error?.message || error) }, 502)
   }
