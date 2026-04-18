@@ -25,36 +25,227 @@ function extractJson(text) {
   }
 }
 
-function normalizeGenerated(generated) {
+function toNumber(value, fallback = 0) {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
+}
+
+function dayCategoryFromType(dayType = '') {
+  if (dayType.includes('Push')) return 'Push'
+  if (dayType.includes('Pull')) return 'Pull'
+  if (dayType.includes('Legs')) return 'Legs'
+  if (dayType.includes('Upper')) return 'Upper'
+  if (dayType.includes('Light Activity')) return 'Light'
+  return 'Rest'
+}
+
+function calcDefaultGoals(profile, dayType = '') {
+  const weight = Math.max(40, toNumber(profile?.weight, 75))
+  const goal = profile?.goal || 'maintain'
+  const proteinPerKg = goal === 'fat_loss' ? 2.2 : goal === 'muscle_gain' ? 2.0 : 1.9
+  const carbsPerKg = goal === 'fat_loss' ? 1.8 : goal === 'muscle_gain' ? 3.2 : 2.6
+
+  const multiplier = dayType.includes('Legs')
+    ? 1.2
+    : (dayType.includes('Push') || dayType.includes('Pull'))
+      ? 1
+      : dayType.includes('Upper')
+        ? 0.9
+        : dayType.includes('Light Activity')
+          ? 0.75
+          : 0.6
+
+  return {
+    protein: Math.round(weight * proteinPerKg),
+    carbs: Math.round(Math.max(80, weight * carbsPerKg * multiplier))
+  }
+}
+
+function buildMealName(title, items) {
+  const chunks = items.map((item) => `${item.food} ${item.weight}g: ${item.protein}g بروتين، ${item.carbs}g كارب`)
+  return `${title}: ${chunks.join(' + ')}`
+}
+
+function isParseableMealName(name) {
+  if (typeof name !== 'string') return false
+  const text = name.trim()
+  if (!text || !text.includes(':')) return false
+  return text.includes('g بروتين') && text.includes('g كارب')
+}
+
+function fallbackNutritionForDay(dayType, profile, dayId) {
+  const goals = calcDefaultGoals(profile, dayType)
+  const hasWorkout = !dayType.includes('Rest')
+  const excluded = String(profile?.excludedFoods || '')
+    .split(',')
+    .map((x) => x.trim().toLowerCase())
+    .filter(Boolean)
+
+  const proteins = ['دجاج', 'لحم', 'تونة', 'بيض', 'زبادي', 'واي بروتين']
+  const carbs = ['رز', 'خبز', 'شوفان', 'موز', 'فاكهة']
+
+  const proteinPool = proteins.filter((f) => !excluded.some((e) => f.toLowerCase().includes(e)))
+  const carbPool = carbs.filter((f) => !excluded.some((e) => f.toLowerCase().includes(e)))
+
+  const p = proteinPool.length > 0 ? proteinPool : proteins
+  const c = carbPool.length > 0 ? carbPool : carbs
+
+  const pickP = (offset) => p[(dayId + offset) % p.length]
+  const pickC = (offset) => c[(dayId + offset) % c.length]
+
+  const meals = [
+    {
+      id: 0,
+      name: buildMealName(hasWorkout ? 'بعد التمرين' : 'وجبة 1', [
+        { food: pickP(0), weight: 200, protein: Math.round(goals.protein * 0.38), carbs: 0 },
+        { food: pickC(0), weight: 200, protein: 0, carbs: Math.round(goals.carbs * 0.42) }
+      ])
+    },
+    {
+      id: 1,
+      name: buildMealName('وجبة 2', [
+        { food: pickP(1), weight: 180, protein: Math.round(goals.protein * 0.34), carbs: 0 },
+        { food: pickC(1), weight: 150, protein: 0, carbs: Math.round(goals.carbs * 0.28) }
+      ])
+    },
+    {
+      id: 2,
+      name: buildMealName('وجبة 3', [
+        { food: pickP(2), weight: 170, protein: Math.round(goals.protein * 0.28), carbs: 0 },
+        { food: pickC(2), weight: 120, protein: 0, carbs: Math.max(0, goals.carbs - Math.round(goals.carbs * 0.42) - Math.round(goals.carbs * 0.28)) }
+      ])
+    }
+  ]
+
+  const preWorkout = hasWorkout
+    ? {
+        name: buildMealName('قبل التمرين', [
+          { food: pickC(3), weight: 120, protein: 0, carbs: Math.round(goals.carbs * 0.2) },
+          { food: 'واي بروتين', weight: 30, protein: 25, carbs: 0 }
+        ])
+      }
+    : null
+
+  return { preWorkout, goals, meals }
+}
+
+function normalizeGeneratedStrict(generated, weekDays, exercisePool, profile) {
   const safe = {}
+
+  const poolByCategory = {
+    Push: exercisePool.filter((x) => x.category === 'Push'),
+    Pull: exercisePool.filter((x) => x.category === 'Pull'),
+    Legs: exercisePool.filter((x) => x.category === 'Legs'),
+    Core: exercisePool.filter((x) => x.category === 'Core'),
+    Cardio: exercisePool.filter((x) => x.category === 'Cardio')
+  }
+
+  function sourceForCategory(category) {
+    if (category === 'Upper') return [...poolByCategory.Push, ...poolByCategory.Pull]
+    if (category === 'Light') return [...poolByCategory.Cardio, ...poolByCategory.Core]
+    return poolByCategory[category] || []
+  }
+
   for (let i = 0; i < 7; i += 1) {
+    const dayCfg = weekDays[i] || { id: i, type: 'Rest' }
+    const type = dayCfg.type || 'Rest'
+    const category = dayCategoryFromType(type)
     const day = generated?.[i] || generated?.[String(i)] || {}
-    const exercises = Array.isArray(day.exercises) ? day.exercises : []
-    const meals = Array.isArray(day?.nutrition?.meals) ? day.nutrition.meals : []
-    const goals = day?.nutrition?.goals || {}
+    const source = sourceForCategory(category)
+    const allowedNames = new Set(source.map((x) => x.name))
+
+    let exercises = Array.isArray(day.exercises)
+      ? day.exercises.map((ex, idx) => ({
+          id: ex.id ?? `g-${i}-${idx}`,
+          name: ex.name || `Exercise ${idx + 1}`,
+          sets: Number.isFinite(Number(ex.sets)) ? Number(ex.sets) : 3,
+          reps: ex.reps || '10-12',
+          videoUrl: ''
+        }))
+      : []
+
+    const trainingDay = category !== 'Rest'
+    const minExercises = category === 'Light' ? 2 : trainingDay ? 3 : 0
+    const maxExercises = category === 'Light' ? 3 : trainingDay ? 5 : 0
+
+    if (trainingDay && source.length > 0) {
+      exercises = exercises.map((ex, idx) => {
+        if (allowedNames.has(ex.name)) return ex
+        const fallback = source[(i + idx) % source.length]
+        if (!fallback) return ex
+        return {
+          id: ex.id ?? `g-${i}-${idx}`,
+          name: fallback.name,
+          sets: toNumber(fallback.sets, toNumber(ex.sets, 3)),
+          reps: fallback.reps || ex.reps || '10-12',
+          videoUrl: ''
+        }
+      })
+    }
+
+    if (trainingDay && exercises.length > maxExercises) {
+      exercises = exercises.slice(0, maxExercises)
+    }
+
+    if (trainingDay) {
+      const seen = new Set()
+      exercises = exercises.filter((ex) => {
+        const key = String(ex.name || '').trim()
+        if (!key || seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+    }
+
+    if (trainingDay && exercises.length < minExercises) {
+      const needed = minExercises - exercises.length
+      for (let n = 0; n < needed; n += 1) {
+        const item = source[(i + n) % Math.max(1, source.length)]
+        if (!item) break
+        exercises.push({
+          id: `auto-${i}-${n}`,
+          name: item.name,
+          sets: toNumber(item.sets, 3),
+          reps: item.reps || '10-12',
+          videoUrl: ''
+        })
+      }
+    }
+
+    if (!trainingDay) exercises = []
+
+    const nutrition = day?.nutrition || {}
+    const fallbackNutrition = fallbackNutritionForDay(type, profile, i)
+    const meals = Array.isArray(nutrition.meals) ? nutrition.meals.filter(Boolean) : []
+    const normalizedMeals = meals.map((meal, idx) => {
+      const fallback = fallbackNutrition.meals[idx] || fallbackNutrition.meals[fallbackNutrition.meals.length - 1]
+      const candidateName = meal?.name
+      return {
+        id: meal?.id ?? idx,
+        name: isParseableMealName(candidateName) ? candidateName : fallback.name
+      }
+    })
 
     safe[i] = {
       dayId: i,
-      exercises: exercises.map((ex, idx) => ({
-        id: ex.id ?? `g-${i}-${idx}`,
-        name: ex.name || `Exercise ${idx + 1}`,
-        sets: Number.isFinite(Number(ex.sets)) ? Number(ex.sets) : 3,
-        reps: ex.reps || '10-12',
-        videoUrl: ''
-      })),
+      exercises,
       nutrition: {
-        preWorkout: day?.nutrition?.preWorkout?.name ? { name: day.nutrition.preWorkout.name } : null,
+        preWorkout: trainingDay
+          ? (nutrition.preWorkout?.name && isParseableMealName(nutrition.preWorkout.name)
+            ? { name: nutrition.preWorkout.name }
+            : fallbackNutrition.preWorkout)
+          : null,
         goals: {
-          protein: Number.isFinite(Number(goals.protein)) ? Number(goals.protein) : 150,
-          carbs: Number.isFinite(Number(goals.carbs)) ? Number(goals.carbs) : 150
+          protein: Number.isFinite(Number(nutrition?.goals?.protein)) ? Number(nutrition.goals.protein) : fallbackNutrition.goals.protein,
+          carbs: Number.isFinite(Number(nutrition?.goals?.carbs)) ? Number(nutrition.goals.carbs) : fallbackNutrition.goals.carbs
         },
-        meals: meals.map((meal, idx) => ({
-          id: meal.id ?? idx,
-          name: meal.name || `وجبة ${idx + 1}: عنصر 100g: 20g بروتين، 20g كارب`
-        }))
+        meals: normalizedMeals.length >= 3
+          ? normalizedMeals
+          : fallbackNutrition.meals
       }
     }
   }
+
   return safe
 }
 
@@ -167,7 +358,7 @@ Rules:
           if (parsedFromFailed?.generated) {
             return jsonResponse({
               summary: parsedFromFailed.summary || 'تم إنشاء الخطة عبر Groq.',
-              generated: normalizeGenerated(parsedFromFailed.generated)
+              generated: normalizeGeneratedStrict(parsedFromFailed.generated, weekDays, exercisePool, profile)
             })
           }
         }
@@ -200,6 +391,6 @@ Rules:
 
   return jsonResponse({
     summary: parsed.summary || 'تم إنشاء الخطة عبر Groq.',
-    generated: normalizeGenerated(parsed.generated)
+    generated: normalizeGeneratedStrict(parsed.generated, weekDays, exercisePool, profile)
   })
 }
