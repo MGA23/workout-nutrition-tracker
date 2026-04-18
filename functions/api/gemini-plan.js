@@ -58,6 +58,17 @@ function normalizeGenerated(generated) {
   return safe
 }
 
+async function fetchWithTimeout(url, options, timeoutMs = 20000) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal })
+    return response
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context
 
@@ -76,51 +87,40 @@ export async function onRequestPost(context) {
   const weekDays = Array.isArray(body?.weekDays) ? body.weekDays : []
   const exercisePool = Array.isArray(body?.exercisePool) ? body.exercisePool : []
 
-  const prompt = `
-You are a fitness programming assistant.
+  const prompt = `Generate a realistic 7-day gym and nutrition plan in Arabic JSON only.
 
-Task:
-- Build a 7-day weekly plan in JSON only.
-- Include exercises and nutrition for each day.
-- Use user profile and available days/exercises.
+Inputs:
+profile=${JSON.stringify(profile)}
+weekDays=${JSON.stringify(weekDays)}
+exercisePool=${JSON.stringify(exercisePool)}
 
-User profile:
-${JSON.stringify(profile, null, 2)}
-
-Week days:
-${JSON.stringify(weekDays, null, 2)}
-
-Exercise pool:
-${JSON.stringify(exercisePool, null, 2)}
-
-STRICT output format (JSON only):
+Output JSON schema:
 {
   "summary": "Arabic short summary",
   "generated": {
     "0": {
       "dayId": 0,
-      "exercises": [{ "id": "string", "name": "string", "sets": 3, "reps": "10-12", "videoUrl": "" }],
+      "exercises": [{ "id": "any", "name": "string", "sets": 3, "reps": "10-12", "videoUrl": "" }],
       "nutrition": {
-        "preWorkout": { "name": "قبل التمرين: موز 120g: 0g بروتين، 25g كارب + واي 30g: 25g بروتين، 0g كارب" } or null,
+        "preWorkout": { "name": "قبل التمرين: موز 120g: 0g بروتين، 25g كارب + واي بروتين 30g: 25g بروتين، 0g كارب" } or null,
         "goals": { "protein": 160, "carbs": 170 },
         "meals": [
-          { "id": 0, "name": "بعد التمرين: دجاج 200g: 60g بروتين، 0g كارب + رز 200g: 0g بروتين، 56g كارب" }
+          { "id": 0, "name": "وجبة 1: دجاج 200g: 60g بروتين، 0g كارب + رز 200g: 0g بروتين، 56g كارب" }
         ]
       }
-    },
-    "1": { ... },
-    ... up to "6"
+    }
   }
 }
 
 Rules:
-- Meal name format must remain exact and parseable: "عنوان: مكون وزنg: Xg بروتين، Yg كارب + ..."
-- Keep plans realistic for beginner/intermediate.
-- Respect excluded foods when possible.
-- Return Arabic summary.
+1) Strict valid JSON only (no markdown).
+2) For every meal name keep exact parseable format: "عنوان: مكون وزنg: Xg بروتين، Yg كارب + ...".
+3) Keep plan practical for beginner/intermediate.
+4) Respect excluded foods if present.
+5) Include all days 0..6.
 `
 
-  const deepseekResp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+  const deepseekResp = await fetchWithTimeout('https://api.deepseek.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -138,11 +138,12 @@ Rules:
           content: prompt
         }
       ],
-      temperature: 0.8,
+      temperature: 0.5,
       top_p: 0.9,
-      max_tokens: 4000
+      max_tokens: 1800,
+      response_format: { type: 'json_object' }
     })
-  })
+  }, 20000)
 
   if (!deepseekResp.ok) {
     const text = await deepseekResp.text()

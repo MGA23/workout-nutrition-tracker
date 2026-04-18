@@ -2330,16 +2330,35 @@
 
             const tryGenerateGeminiPlan = async (form) => {
                 try {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 25000);
+
+                    const compactWeekDays = WEEK_DAYS.map((day) => ({
+                        id: day.id,
+                        name: day.name,
+                        type: day.type,
+                        time: day.time
+                    }));
+
+                    const compactExercisePool = BASIC_GYM_EXERCISES.map((exercise) => ({
+                        category: exercise.category,
+                        name: exercise.name,
+                        sets: exercise.sets,
+                        reps: exercise.reps
+                    }));
+
                     const response = await fetch('/api/gemini-plan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
+                        signal: controller.signal,
                         body: JSON.stringify({
                             profile: form,
-                            weekDays: WEEK_DAYS,
-                            exercisePool: BASIC_GYM_EXERCISES,
+                            weekDays: compactWeekDays,
+                            exercisePool: compactExercisePool,
                             instructions: 'Return weekly plan in compatible schema: generated{0..6}, each day has dayId, exercises[], nutrition{preWorkout,goals,meals}. Keep meal name format exactly compatible.'
                         })
                     });
+                    clearTimeout(timeout);
 
                     if (!response.ok) {
                         const text = await response.text();
@@ -2371,7 +2390,11 @@
                     setAiSummary(finalResult.summary);
                     setAiDialogOpen(false);
                 } catch (error) {
-                    alert('تعذر توليد الخطة من Gemini. تأكد من إعداد endpoint ومفتاح API ثم حاول مرة أخرى.');
+                    const reason = error?.name === 'AbortError'
+                        ? 'انتهت مهلة الطلب. حاول مرة أخرى أو قلل التفاصيل.'
+                        : 'تعذر توليد الخطة من Gemini/DeepSeek. تأكد من إعداد endpoint ومفتاح API ثم حاول مرة أخرى.';
+                    setAiSummary(reason);
+                    alert(reason);
                 } finally {
                     setAiIsGenerating(false);
                 }
