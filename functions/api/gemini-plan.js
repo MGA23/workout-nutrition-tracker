@@ -102,7 +102,7 @@ Output JSON schema:
       "dayId": 0,
       "exercises": [{ "id": "any", "name": "string", "sets": 3, "reps": "10-12", "videoUrl": "" }],
       "nutrition": {
-        "preWorkout": { "name": "قبل التمرين: موز 120g: 0g بروتين، 25g كارب + واي بروتين 30g: 25g بروتين، 0g كارب" } or null,
+        "preWorkout": null,
         "goals": { "protein": 160, "carbs": 170 },
         "meals": [
           { "id": 0, "name": "وجبة 1: دجاج 200g: 60g بروتين، 0g كارب + رز 200g: 0g بروتين، 56g كارب" }
@@ -119,6 +119,7 @@ Rules:
 4) Respect excluded foods if present.
 5) Include all days 0..6.
 6) Keep response concise and minimal tokens.
+7) Use valid JSON primitives only. Do not write placeholders like "..." or comments.
 `
 
   const modelCandidates = [
@@ -143,10 +144,9 @@ Rules:
             { role: 'system', content: 'You are a fitness programming assistant. Return valid JSON only.' },
             { role: 'user', content: prompt }
           ],
-          temperature: 0.3,
+          temperature: 0.15,
           top_p: 0.9,
-          max_tokens: 1000,
-          response_format: { type: 'json_object' }
+          max_tokens: 1400
         })
       }, 30000)
 
@@ -157,6 +157,23 @@ Rules:
 
       const text = await resp.text()
       lastErrorText = text
+
+      // Groq may return json_validate_failed with a parseable failed_generation payload.
+      try {
+        const errorPayload = JSON.parse(text)
+        const failedGeneration = errorPayload?.error?.failed_generation
+        if (errorPayload?.error?.code === 'json_validate_failed' && failedGeneration) {
+          const parsedFromFailed = extractJson(failedGeneration)
+          if (parsedFromFailed?.generated) {
+            return jsonResponse({
+              summary: parsedFromFailed.summary || 'تم إنشاء الخطة عبر Groq.',
+              generated: normalizeGenerated(parsedFromFailed.generated)
+            })
+          }
+        }
+      } catch (_) {
+        // ignore JSON parse failure and continue fallback flow
+      }
 
       if (resp.status === 404 || resp.status === 429) continue
 
