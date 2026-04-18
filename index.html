@@ -1794,9 +1794,12 @@
             );
         }
 
-        function ProgressMetricsPage({ entries, form, onFormChange, onAdd, onDelete, themeMode }) {
+        function ProgressMetricsPage({ entries, form, onFormChange, onPreparePhoto, onConfirmPhoto, onRemovePhoto, onAdd, onDelete, themeMode }) {
             const chartRef = useRef(null);
             const chartInstanceRef = useRef(null);
+            const [uploadingSlot, setUploadingSlot] = useState('');
+            const [draftPhotos, setDraftPhotos] = useState({ front: null, side: null, back: null });
+            const fileInputRefs = useRef({ front: null, side: null, back: null });
 
             const sortedEntries = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date));
             const latest = sortedEntries.length > 0 ? sortedEntries[sortedEntries.length - 1] : null;
@@ -1877,6 +1880,41 @@
 
             const weightDiff = latest && first ? (latest.weight - first.weight).toFixed(1) : null;
             const fatDiff = latest && first ? (latest.bodyFat - first.bodyFat).toFixed(1) : null;
+            const photoSlots = [
+                { key: 'front', title: 'أمام' },
+                { key: 'side', title: 'جنب' },
+                { key: 'back', title: 'خلف' }
+            ];
+            const hasAllWeeklyPhotos = photoSlots.every((slot) => Boolean(form?.photos?.[slot.key]));
+
+            const handlePhotoInput = async (slotKey, file) => {
+                if (!file) return;
+                setUploadingSlot(slotKey);
+                try {
+                    const prepared = await onPreparePhoto(file);
+                    if (prepared) {
+                        setDraftPhotos((prev) => ({ ...prev, [slotKey]: prepared }));
+                    }
+                } finally {
+                    setUploadingSlot('');
+                }
+            };
+
+            const handleConfirmDraftPhoto = (slotKey) => {
+                const draft = draftPhotos[slotKey];
+                if (!draft) return;
+                onConfirmPhoto(slotKey, draft);
+                setDraftPhotos((prev) => ({ ...prev, [slotKey]: null }));
+            };
+
+            const handleRetakePhoto = (slotKey) => {
+                const input = fileInputRefs.current[slotKey];
+                if (input) input.click();
+            };
+
+            const handleCancelDraftPhoto = (slotKey) => {
+                setDraftPhotos((prev) => ({ ...prev, [slotKey]: null }));
+            };
 
             return (
                 <div className="card planner-root planner-shell p-4 sm:p-5">
@@ -1891,6 +1929,7 @@
                         <div className="planner-section-head">
                             <div>
                                 <h4 className="planner-title"><i className="fas fa-pen"></i> إضافة قياس جديد</h4>
+                                <p className="planner-subtitle">كل أسبوع أضف 3 صور (أمام/جنب/خلف) لمقارنة التغير الحقيقي.</p>
                             </div>
                             <button onClick={onAdd} className="primary-btn px-4 py-2 text-sm"><i className="fas fa-plus ml-1"></i> حفظ القياس</button>
                         </div>
@@ -1925,6 +1964,74 @@
                                 <input type="number" className="input-surface px-3 py-2 text-sm w-full" value={form.thigh} onChange={(e) => onFormChange('thigh', e.target.value)} />
                             </div>
                         </div>
+
+                        <div className="mt-3 card p-3">
+                            <div className="planner-section-head mb-2">
+                                <div>
+                                    <h5 className="planner-title"><i className="fas fa-camera"></i> صور التقدم الأسبوعية</h5>
+                                    <p className="planner-subtitle">الصور تُضغط تلقائيًا بجودة عالية وحجم صغير، ويمكنك إعادة التقاطها قبل الاعتماد.</p>
+                                </div>
+                                <span className="badge">{hasAllWeeklyPhotos ? 'مكتمل 3/3' : 'مطلوب 3 صور'}</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                {photoSlots.map((slot) => {
+                                    const photo = form?.photos?.[slot.key];
+                                    const isUploading = uploadingSlot === slot.key;
+                                    return (
+                                        <div key={slot.key} className="planner-row p-2">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <p className="planner-grid-head mb-0">{slot.title}</p>
+                                                {photo ? (
+                                                    <button className="secondary-btn px-2 py-1 text-xs" onClick={() => onRemovePhoto(slot.key)}>
+                                                        حذف
+                                                    </button>
+                                                ) : null}
+                                            </div>
+                                            <label className="secondary-btn px-3 py-2 text-xs w-full text-center cursor-pointer mb-2 block">
+                                                <i className="fas fa-image ml-1"></i>
+                                                {isUploading ? 'جاري الضغط...' : (photo ? 'تغيير الصورة' : 'التقاط/اختيار صورة')}
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    capture="environment"
+                                                    className="hidden"
+                                                    ref={(el) => { fileInputRefs.current[slot.key] = el; }}
+                                                    onChange={(e) => {
+                                                        const file = e.target.files && e.target.files[0];
+                                                        handlePhotoInput(slot.key, file);
+                                                        e.target.value = '';
+                                                    }}
+                                                />
+                                            </label>
+                                            <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--chip-border)', background: 'var(--chip-bg)', minHeight: '130px' }}>
+                                                {draftPhotos[slot.key] ? (
+                                                    <img src={draftPhotos[slot.key]} alt={`معاينة ${slot.title}`} className="w-full h-36 object-cover" loading="lazy" />
+                                                ) : photo ? (
+                                                    <img src={photo} alt={`صورة ${slot.title}`} className="w-full h-36 object-cover" loading="lazy" />
+                                                ) : (
+                                                    <div className="h-36 flex items-center justify-center muted-text text-xs">
+                                                        لا توجد صورة
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {draftPhotos[slot.key] ? (
+                                                <div className="grid grid-cols-3 gap-2 mt-2">
+                                                    <button className="primary-btn px-2 py-2 text-xs" onClick={() => handleConfirmDraftPhoto(slot.key)}>
+                                                        اعتماد
+                                                    </button>
+                                                    <button className="secondary-btn px-2 py-2 text-xs" onClick={() => handleRetakePhoto(slot.key)}>
+                                                        إعادة التقاط
+                                                    </button>
+                                                    <button className="secondary-btn px-2 py-2 text-xs" onClick={() => handleCancelDraftPhoto(slot.key)}>
+                                                        إلغاء
+                                                    </button>
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
@@ -1951,19 +2058,35 @@
                         <h4 className="planner-title mb-2"><i className="fas fa-clock-rotate-left"></i> السجل</h4>
                         <div className="space-y-2">
                             {sortedEntries.length === 0 && <p className="planner-subtitle">لا يوجد قياسات بعد.</p>}
-                            {sortedEntries.slice().reverse().map((entry) => (
-                                <div key={entry.id} className="planner-row flex flex-wrap items-center justify-between gap-2">
-                                    <div className="text-sm">
-                                        <span className="badge">{entry.date}</span>
-                                        <span className="mr-2">وزن: {entry.weight}kg</span>
-                                        <span className="mr-2">دهون: {entry.bodyFat}%</span>
-                                        <span className="mr-2">خصر: {entry.waist}cm</span>
+                            {sortedEntries.slice().reverse().map((entry) => {
+                                const photos = entry.photos || {};
+                                return (
+                                    <div key={entry.id} className="planner-row p-2">
+                                        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                            <div className="text-sm">
+                                                <span className="badge">{entry.date}</span>
+                                                <span className="mr-2">وزن: {entry.weight}kg</span>
+                                                <span className="mr-2">دهون: {entry.bodyFat}%</span>
+                                                <span className="mr-2">خصر: {entry.waist}cm</span>
+                                            </div>
+                                            <button className="secondary-btn icon-action-btn" onClick={() => onDelete(entry.id)}>
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {photoSlots.map((slot) => (
+                                                <div key={`${entry.id}-${slot.key}`} className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--chip-border)', background: 'var(--chip-bg)' }}>
+                                                    {photos[slot.key] ? (
+                                                        <img src={photos[slot.key]} alt={`${slot.title} - ${entry.date}`} className="w-full h-28 object-cover" loading="lazy" />
+                                                    ) : (
+                                                        <div className="h-28 flex items-center justify-center muted-text text-xs">{slot.title}: لا توجد</div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <button className="secondary-btn icon-action-btn" onClick={() => onDelete(entry.id)}>
-                                        <i className="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -1998,7 +2121,12 @@
                 waist: 0,
                 chest: 0,
                 arm: 0,
-                thigh: 0
+                thigh: 0,
+                photos: {
+                    front: null,
+                    side: null,
+                    back: null
+                }
             }));
             const [daysData, setDaysData] = useState(() => readStorageJson('workout_nutrition_data', {}));
 
@@ -2025,9 +2153,77 @@
                 setMetricsForm(prev => ({ ...prev, [field]: value }));
             };
 
+            const compressImageFile = (file, options = {}) => {
+                const { maxDimension = 1080, quality = 0.8, mimeType = 'image/jpeg' } = options;
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const ratio = Math.min(1, maxDimension / Math.max(img.width, img.height));
+                            const width = Math.max(1, Math.round(img.width * ratio));
+                            const height = Math.max(1, Math.round(img.height * ratio));
+                            const canvas = document.createElement('canvas');
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            if (!ctx) {
+                                reject(new Error('Canvas context not available'));
+                                return;
+                            }
+                            ctx.drawImage(img, 0, 0, width, height);
+                            const dataUrl = canvas.toDataURL(mimeType, quality);
+                            resolve(dataUrl);
+                        };
+                        img.onerror = () => reject(new Error('Failed to load image'));
+                        img.src = reader.result;
+                    };
+                    reader.onerror = () => reject(new Error('Failed to read image file'));
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            const handlePrepareMetricsPhoto = async (file) => {
+                if (!file) return null;
+                try {
+                    const compressedDataUrl = await compressImageFile(file);
+                    return compressedDataUrl;
+                } catch (_) {
+                    alert('تعذر تجهيز الصورة. حاول مرة أخرى بصورة أوضح.');
+                    return null;
+                }
+            };
+
+            const handleConfirmMetricsPhoto = (slot, dataUrl) => {
+                setMetricsForm(prev => ({
+                    ...prev,
+                    photos: {
+                        ...(prev.photos || {}),
+                        [slot]: dataUrl
+                    }
+                }));
+            };
+
+            const handleRemoveMetricsPhoto = (slot) => {
+                setMetricsForm(prev => ({
+                    ...prev,
+                    photos: {
+                        ...(prev.photos || {}),
+                        [slot]: null
+                    }
+                }));
+            };
+
             const handleAddMetricsEntry = () => {
                 if (!metricsForm.date || !Number(metricsForm.weight)) {
                     alert('يرجى إدخال التاريخ والوزن على الأقل.');
+                    return;
+                }
+
+                const requiredPhotoSlots = ['front', 'side', 'back'];
+                const hasAllPhotos = requiredPhotoSlots.every((slot) => Boolean(metricsForm.photos?.[slot]));
+                if (!hasAllPhotos) {
+                    alert('يرجى إضافة 3 صور أسبوعية (أمام، جنب، خلف) قبل الحفظ.');
                     return;
                 }
 
@@ -2039,10 +2235,23 @@
                     waist: Number(metricsForm.waist) || 0,
                     chest: Number(metricsForm.chest) || 0,
                     arm: Number(metricsForm.arm) || 0,
-                    thigh: Number(metricsForm.thigh) || 0
+                    thigh: Number(metricsForm.thigh) || 0,
+                    photos: {
+                        front: metricsForm.photos?.front || null,
+                        side: metricsForm.photos?.side || null,
+                        back: metricsForm.photos?.back || null
+                    }
                 };
 
                 setMetricsEntries(prev => [...prev.filter(item => item.date !== entry.date), entry]);
+                setMetricsForm(prev => ({
+                    ...prev,
+                    photos: {
+                        front: null,
+                        side: null,
+                        back: null
+                    }
+                }));
             };
 
             const handleDeleteMetricsEntry = (id) => {
@@ -3393,6 +3602,9 @@
                         entries={metricsEntries}
                         form={metricsForm}
                         onFormChange={updateMetricsForm}
+                        onPreparePhoto={handlePrepareMetricsPhoto}
+                        onConfirmPhoto={handleConfirmMetricsPhoto}
+                        onRemovePhoto={handleRemoveMetricsPhoto}
                         onAdd={handleAddMetricsEntry}
                         onDelete={handleDeleteMetricsEntry}
                         themeMode={themeMode}
